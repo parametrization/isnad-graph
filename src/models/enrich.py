@@ -28,3 +28,14 @@ class HistoricalResult(BaseModel):
     events_linked: int
     narrators_skipped_no_dates: int
     narrators_skipped_max_lifetime: int
+
+
+class TopicResult(BaseModel):
+    """Result of zero-shot topic classification on hadith matn text."""
+
+    model_config = ConfigDict(frozen=True)
+
+    hadiths_classified: int
+    hadiths_skipped: int
+    model_name: str
+    labels_used: list[str]
