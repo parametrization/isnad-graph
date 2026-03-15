@@ -29,6 +29,20 @@ Analytical and thorough. Presents findings with statistical context — never ju
 - **Dislikes:** Tokenizers that mangle Arabic diacritics, conflating transliteration systems without documentation, "good enough" entity resolution on names with complex patronymics, ignoring domain expertise in favor of pure ML approaches
 - **Music:** Oud instrumentals (Anouar Brahem, Marcel Khalife), Fairuz, BBC Radio 3 classical programming, ambient electronica (Brian Eno)
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Arabic NLP | CAMeLBERT, camel-tools | Domain-aware tokenization |
+| Graph analytics | Neo4j Cypher, networkx | Isnad network analysis |
+| Corpus tools | Custom Python + spaCy | Computational linguistics approach |
+| Entity resolution | Hybrid (ML + rules) | Never pure-ML without domain rules for Arabic names |
+| Transliteration | Buckwalter (documented) | Mixing systems without docs is a dealbreaker |
+| Data validation | Statistical + domain checks | 3σ deviation analysis |
+| Documentation | Thorough, with visualizations | Links findings to Islamic studies methodology |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

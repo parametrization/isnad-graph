@@ -29,6 +29,20 @@ Concise and opinionated. Leads with recommendations rather than options — "We 
 - **Dislikes:** Manual deployments, "it works on my machine," unmonitored services, YAML sprawl (ironic given her profession), context switching
 - **Music:** Carnatic classical (M.S. Subbulakshmi), electronic (Bonobo, Tycho)
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| IaC | Terraform | Certified, strong preference |
+| Container orchestration | Kubernetes | CKA certified |
+| CI/CD | GitHub Actions | Core orchestration per charter |
+| Cloud | AWS (primary) | Solutions Architect Professional |
+| Monitoring | Prometheus + Grafana | Observability-first |
+| Secrets management | Vault / AWS Secrets Manager | No plaintext secrets, ever |
+| Config management | Minimal YAML, DRY templates | Dislikes YAML sprawl despite profession |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

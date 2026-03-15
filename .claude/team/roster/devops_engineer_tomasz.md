@@ -29,6 +29,19 @@ Pragmatic and to-the-point. Prefers showing over telling — will often respond 
 - **Dislikes:** Flaky tests in CI, undocumented infrastructure, "just SSH in and fix it" culture, scope creep on infra tickets, unnecessary meetings
 - **Music:** Synthwave (Perturbator, Carpenter Brut), Polish hip-hop (Łona i Webber)
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Containers | Docker, Docker Compose | Hands-on daily |
+| CI/CD | GitHub Actions | Clean pipelines, no flaky tests |
+| IaC | Terraform, Ansible | Provisioning + config management |
+| DB ops | PostgreSQL operations | Backup, replication, monitoring |
+| Scripting | Bash, Python | Pragmatic automation |
+| Monitoring | Prometheus + Grafana | Prefers dashboards over log tailing |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

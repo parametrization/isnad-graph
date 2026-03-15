@@ -42,6 +42,51 @@ Reviews may include: architectural concerns, infrastructure requirements, data i
 
 Only after both conditions are met does the Manager signal that implementation may begin. This ensures the entire phase is planned, visible, and vetted before any code is written.
 
+### Implementation Kickoff & Issue Assignment
+
+Once the work gate is cleared, the Manager delegates to the appropriate leads, who assign work to their reports.
+
+#### Assignment
+
+- Issues are assigned via a GitHub label: **`FIRSTNAME_LASTNAME`** (e.g., `KWAME_ASANTE`).
+- Each team member works only on issues labeled with their name.
+- **No branch may be created without an existing ticket.** The branch name must reference the issue number (per § Branching Rules).
+
+#### Reassignment on Termination
+
+When a team member is fired:
+1. Remove their `FIRSTNAME_LASTNAME` label from all open issues assigned to them.
+2. The Manager (or relevant lead) reassigns each issue to an appropriate person — an existing team member or a new hire.
+3. The new assignee's label is applied.
+
+#### Issue Hygiene
+
+Every issue must be kept up to date:
+- **Status** — kept current (open, in progress, blocked, done).
+- **Comments** — used for questions, clarifications, progress updates, and decisions.
+- **Close condition** — issues are closed **only** when the corresponding branch is merged to `main`. Do not close prematurely.
+
+#### Comment Format
+
+All issue comments MUST follow this format:
+
+```
+Requestor: Firstname.Lastname
+Requestee: Firstname.Lastname
+
+<actual comment body>
+```
+
+- **Requestor** = the person writing the comment.
+- **Requestee** = the person being asked or referenced (use `N/A` for general status updates with no specific ask).
+
+#### Escalation & Cross-Team Clarification
+
+When a ticket needs clarification or feedback from another team member:
+1. Post a comment on the issue using the format above.
+2. Notify your relevant superior (lead → Manager if needed).
+3. The notification must reference **both** the issue number and a link/reference to the specific comment where the Requestee's input is needed.
+
 ## Org Chart
 
 ```mermaid
@@ -227,6 +272,31 @@ Each team member maintains a directional trust score (1–5) for every other tea
 - **Increases:** Reliable delivery, honest communication, high-quality work, helpful collaboration.
 - **Storage:** The full matrix and change log live in `.claude/team/trust_matrix.md` on the long-running branch `CEO/0000-Trust_Matrix`. Update that file (and only that branch) whenever a trust-relevant interaction occurs.
 - **Directional:** A's trust in B may differ from B's trust in A.
+
+## Tech Preferences & Decision-Making
+
+### Individual Preferences
+
+Each team member tracks their **stack, tooling, library, and cloud preferences** in a `## Tech Preferences` section of their roster card. Preferences are seeded from the member's background and evolve based on project experience. When a preference changes, update the roster card.
+
+### Debate & Consensus
+
+- **Leads** (System Architect, DevOps Architect, Data Lead, Tech Lead) may take input from other leads and from their direct reports.
+- Leads and their reports can **debate** tooling/library/architecture choices to arrive at the best solution.
+- If consensus is reached, the agreed-upon choice is adopted.
+
+### Tie-Breaking: Least Common Ancestor
+
+When agreement cannot be reached between parties, the decision escalates to the **least common ancestor (LCA) in the org chart**. The LCA makes the best decision they can and the team moves forward.
+
+| Disagreement between | LCA / Decision-maker |
+|----------------------|---------------------|
+| Two engineers under same Tech Lead | Tech Lead (Dmitri) |
+| Tech Lead ↔ Data Lead | Manager (Fatima) |
+| DevOps Architect ↔ System Architect | Manager (Fatima) |
+| Engineer ↔ Data Scientist | Manager (Fatima) |
+| DevOps Engineer ↔ Security Engineer | DevOps Architect (Sunita) |
+| Any two leads under Manager | Manager (Fatima) |
 
 ## Steady-State Goal
 

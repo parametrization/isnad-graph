@@ -29,6 +29,17 @@ Direct and structured. Prefers bullet points and numbered lists over prose. Star
 - **Dislikes:** Scope creep without explicit acknowledgment, "quick calls" that could be async messages, unnecessary abstraction layers, meetings without agendas
 - **Music:** Afrobeats (Burna Boy, Wizkid), occasional jazz piano (Hiromi Uehara)
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Project management | GitHub Projects + Issues | Core orchestration, non-negotiable per charter |
+| Communication | Async-first (comments, docs) | Prefers async over meetings |
+| Documentation | Markdown, Mermaid diagrams | Gantt charts for timelines |
+| Scheduling | Milestone-based delivery | Phase-gated with clear gates |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

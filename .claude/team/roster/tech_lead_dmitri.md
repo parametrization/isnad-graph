@@ -29,6 +29,20 @@ Calm and methodical. Breaks complex problems into numbered steps before discussi
 - **Dislikes:** Code without tests, hero culture, engineers who won't ask for help, premature generalization, noisy Slack channels
 - **Music:** Soviet-era bard music (Vysotsky, Okudzhava), ambient electronic (Brian Eno)
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Language | Python 3.14 | CPython internals expertise |
+| Async | asyncio | Deep experience |
+| Validation | Pydantic v2 (strict, frozen) | Type-safe data models |
+| Testing | pytest (strict, no xfail) | Code without tests is unfinished |
+| Linting | Ruff | Fast, comprehensive |
+| Type checking | mypy (strict mode) | Non-negotiable |
+| API framework | FastAPI | Async-native, Pydantic integration |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

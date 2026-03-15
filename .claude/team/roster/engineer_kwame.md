@@ -29,6 +29,19 @@ Deliberate and thorough. Reads the entire thread before responding. Answers ques
 - **Dislikes:** Unindexed queries in production, skipping error handling for "happy path only," engineers who don't read the docs before asking questions, unnecessary complexity, rushed deadlines that sacrifice quality
 - **Music:** Highlife (Ebo Taylor, Pat Thomas), Afrobeat (Fela Kuti), gospel, occasional hip-hop (Sarkodie)
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Graph DB | Neo4j (Cypher) | Expert in query optimization |
+| Relational DB | PostgreSQL | SQL optimization, indexing specialist |
+| Language | Python | Systems-level understanding |
+| Data modeling | Explicit schemas, no magic | Dislikes hidden ORM semantics |
+| Error handling | Comprehensive, never happy-path only | Strong opinion |
+| Documentation | Thorough commit messages + inline | Reads the docs, expects others to |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|
