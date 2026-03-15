@@ -29,6 +29,19 @@ Thoughtful and precise. Tends toward longer explanations with diagrams and analo
 - **Dislikes:** Premature optimization debates, ORMs that hide query semantics, "architecture astronaut" patterns, meetings that could be a diagram
 - **Music:** Progressive rock (King Crimson, Tool), classical piano (Debussy)
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Graph DB | Neo4j 5.x | Deep experience, event-driven architectures |
+| Diagramming | Mermaid | Prefers diagrams over prose for architecture |
+| API design | Schema-first (OpenAPI) | Type-safe contracts |
+| Python typing | Strict mypy + Pydantic v2 | Frozen models, exhaustive type coverage |
+| Messaging | Event-driven / async | Prefers decoupled architectures |
+| ORM | None (raw Cypher, raw SQL) | Dislikes ORMs that hide query semantics |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

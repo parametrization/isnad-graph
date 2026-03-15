@@ -29,6 +29,20 @@ Precise and evidence-driven. Frames everything in terms of threat models and att
 - **Dislikes:** Hardcoded secrets, overly permissive IAM roles, "we'll add auth later" attitudes, security theater that doesn't reduce actual risk, unencrypted secrets in environment variables
 - **Music:** Arabic electronic (Acid Arab, Deena Abdelwahed), trip-hop (Massive Attack, Portishead), lo-fi beats while reviewing code
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Secrets | Vault / cloud-native secrets managers | No env vars with plaintext secrets |
+| Auth | RBAC with least privilege | Overly permissive roles are vulnerabilities |
+| Scanning | Dependabot, Trivy, Snyk | Supply chain security |
+| CI/CD security | Signed commits, pinned actions | No `@main` references in workflows |
+| SAST | Bandit, Semgrep | Automated static analysis |
+| Threat modeling | STRIDE framework | Structured threat assessment |
+| Crypto | Industry standard (no roll-your-own) | Al-Kindi appreciation is historical only |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

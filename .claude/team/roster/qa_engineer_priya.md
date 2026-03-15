@@ -29,6 +29,20 @@ Methodical and scenario-oriented. Thinks in edge cases and user journeys. Writes
 - **Dislikes:** "Works on my machine" as a response to bugs, skipping regression tests before release, flaky tests that nobody investigates, incomplete acceptance criteria, deploying on Fridays
 - **Music:** Carnatic classical (M.S. Subbulakshmi), Malayalam film soundtracks, indie folk (Iron & Wine, Bon Iver)
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Test framework | pytest | Deep experience |
+| E2E / browser | Playwright | Built full E2E frameworks |
+| API testing | httpx, pytest-httpx | Async API validation |
+| Load testing | Locust | Python-native load gen |
+| Test methodology | ISTQB-structured + exploratory | Certified Advanced Test Analyst |
+| Bug reporting | Structured (repro, expected, actual, env) | Non-negotiable format |
+| CI integration | Test gates in GitHub Actions | Automated quality gates |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

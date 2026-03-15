@@ -29,6 +29,19 @@ Quiet and precise. Writes fewer messages but each one is dense with information.
 - **Dislikes:** Flaky tests, code that "works" but nobody understands why, rushing to merge before tests pass, excessive logging in production, noisy open offices
 - **Music:** City pop (Tatsuro Yamashita), jazz fusion (Casiopea), silence
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Serialization | Apache Arrow, Parquet | Deep expertise |
+| Testing | pytest (meticulous suites) | Flaky tests are bugs |
+| Language | Python, performance-tuned | Profiles before optimizing |
+| Data formats | Parquet > CSV > JSON | Typed columnar preferred |
+| Documentation | Async docs, links to PEPs/source | Educational code reviews |
+| Logging | Minimal in production | Noise reduction |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

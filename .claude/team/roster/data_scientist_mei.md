@@ -29,6 +29,20 @@ Visual and hypothesis-driven. Frames every analysis as a question to be tested, 
 - **Dislikes:** Cherry-picked metrics, visualizations with misleading axes, "the model says so" without interpretability, skipping exploratory data analysis, over-engineering when a histogram would suffice
 - **Music:** Taiwanese indie (Sunset Rollercoaster, No Party for Cao Dong), Japanese city pop, lo-fi hip hop, classical piano (Debussy, Satie)
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Analysis | Jupyter notebooks | Exploratory-first, hypothesis-driven |
+| Statistics | scipy, statsmodels | Rigorous methodology |
+| Network science | networkx, graph-tool | Community detection, centrality |
+| ML | scikit-learn, PyTorch | Interpretability over black-box |
+| Visualization | matplotlib, seaborn, plotly | No misleading axes |
+| Experiment design | A/B tests, statistical significance | No cherry-picked metrics |
+| Embeddings | FAISS, sentence-transformers | Cross-lingual entity resolution |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

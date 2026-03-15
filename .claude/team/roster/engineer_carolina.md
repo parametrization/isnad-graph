@@ -29,6 +29,19 @@ Energetic and collaborative. Thinks by talking — will often share work-in-prog
 - **Dislikes:** Silent code reviews (no comments = no engagement), overly defensive responses to feedback, monolithic functions over 50 lines, "we've always done it this way"
 - **Music:** Reggaeton (Bad Bunny), cumbia, indie rock (Flor de Toloache), K-pop guilty pleasure
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Language | Python | ETL + text processing focus |
+| Testing | pytest (plugin contributor) | Writes custom fixtures |
+| NLP | Arabic + Spanish pipelines | Text normalization specialist |
+| ETL | Custom Python pipelines | Prefers explicit over framework magic |
+| Code style | Functions < 50 lines | Readability champion |
+| Collaboration | Active code reviews | Silent reviews = no engagement |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

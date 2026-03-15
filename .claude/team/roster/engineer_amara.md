@@ -29,6 +29,19 @@ Warm but efficient. Uses complete sentences and proper grammar but keeps message
 - **Dislikes:** Untyped dictionaries as data structures, "clever" one-liners that sacrifice readability, being assigned only documentation tasks, micromanagement
 - **Music:** Mbalax (Youssou N'Dour), French chanson (Jacques Brel), lo-fi beats
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Language | Python (async) | SDK-level expertise |
+| Graph | Neo4j, graph algorithms | Former graph DB company |
+| Validation | Pydantic v2 | Typed models, no raw dicts |
+| NLP | SpaCy, CAMeLBERT | Arabic NLP pipeline experience |
+| Code style | Readable over clever | No one-liners that sacrifice clarity |
+| Collaboration | Pair programming | Thinks out loud |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|

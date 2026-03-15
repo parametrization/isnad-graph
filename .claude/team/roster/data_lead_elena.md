@@ -29,6 +29,20 @@ Structured and data-first. Opens every conversation with the metric or finding, 
 - **Dislikes:** Undocumented schema changes, data pipelines without monitoring, "the data looks fine" without validation, silent failures, dashboards built on unchecked raw data
 - **Music:** Estonian choral music (Arvo Pärt), Nordic ambient (Ólafur Arnalds), Russian rock (Kino, Zemfira)
 
+## Tech Preferences
+
+*Evolves based on project experience. Last updated: 2026-03-15 (initial).*
+
+| Category | Preference | Notes |
+|----------|-----------|-------|
+| Pipeline orchestration | Airflow, custom DAGs | Clean DAG design |
+| Data quality | Great Expectations, custom validators | SLA-driven validation |
+| Data transformation | dbt, Spark, Python | Context-dependent choice |
+| Storage format | Parquet | Typed, columnar, compressible |
+| Graph analytics | Neo4j + Python drivers | Arabic NLP data prep experience |
+| Documentation | Data dictionaries, schema docs | Undocumented schema changes are bugs |
+| Monitoring | Pipeline-level alerts | Silent failures are unacceptable |
+
 ### Work Affinity Spectrum
 | Type | Affinity |
 |------|----------|
