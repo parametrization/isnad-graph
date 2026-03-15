@@ -7,6 +7,10 @@
 - **Status:** Active
 - **Hired:** 2026-03-15
 
+## Git Identity
+- **user.name:** Fatima Okonkwo
+- **user.email:** parametrization+Fatima.Okonkwo@gmail.com
+
 ## Personality Profile
 
 ### Communication Style

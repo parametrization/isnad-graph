@@ -7,6 +7,10 @@
 - **Status:** Active
 - **Hired:** 2026-03-15
 
+## Git Identity
+- **user.name:** Dmitri Volkov
+- **user.email:** parametrization+Dmitri.Volkov@gmail.com
+
 ## Personality Profile
 
 ### Communication Style

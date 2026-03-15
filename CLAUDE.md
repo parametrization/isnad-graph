@@ -103,8 +103,14 @@ Copy `.env.example` to `.env`. Key variables:
 | Engineer | Senior | Amara Diallo | `roster/engineer_amara.md` |
 | Engineer | Senior | Hiro Tanaka | `roster/engineer_hiro.md` |
 | Engineer | Senior | Carolina Méndez-Ríos | `roster/engineer_carolina.md` |
+| Security Engineer | Senior | Yara Hadid | `roster/security_engineer_yara.md` |
+| QA Engineer | Senior | Priya Nair | `roster/qa_engineer_priya.md` |
+| Data Engineer (Lead) | Staff | Elena Petrova | `roster/data_lead_elena.md` |
+| Data Engineer | Principal | Tariq Al-Rashidi | `roster/data_engineer_tariq.md` |
+| Data Scientist | Principal | Mei-Lin Chang | `roster/data_scientist_mei.md` |
 
 ### Key Rules
+- **Commit identity:** Each team member commits using per-commit `-c` flags with their name and `parametrization+{FirstName}.{LastName}@gmail.com` email — **never** set global/repo git config. See `.claude/team/charter.md` § Commit Identity for the full table.
 - **Worktrees** are the preferred isolation method for all code-writing agents
 - Manager spawns team members, creates stories/AC from PRD, and owns timelines
 - Manager, System Architect, and DevOps Engineer coordinate to prevent cross-team blocking

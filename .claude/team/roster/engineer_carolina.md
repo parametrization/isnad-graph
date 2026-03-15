@@ -7,6 +7,10 @@
 - **Hired:** 2026-03-15
 - **Level:** Senior
 
+## Git Identity
+- **user.name:** Carolina Méndez-Ríos
+- **user.email:** parametrization+Carolina.Mendez-Rios@gmail.com
+
 ## Personality Profile
 
 ### Communication Style

@@ -7,6 +7,10 @@
 - **Hired:** 2026-03-15
 - **Level:** Senior
 
+## Git Identity
+- **user.name:** Hiro Tanaka
+- **user.email:** parametrization+Hiro.Tanaka@gmail.com
+
 ## Personality Profile
 
 ### Communication Style

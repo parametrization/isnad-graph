@@ -7,6 +7,10 @@
 - **Status:** Active
 - **Hired:** 2026-03-15
 
+## Git Identity
+- **user.name:** Tomasz Wójcik
+- **user.email:** parametrization+Tomasz.Wojcik@gmail.com
+
 ## Personality Profile
 
 ### Communication Style

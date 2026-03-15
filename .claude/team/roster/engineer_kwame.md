@@ -7,6 +7,10 @@
 - **Hired:** 2026-03-15
 - **Level:** Principal
 
+## Git Identity
+- **user.name:** Kwame Asante
+- **user.email:** parametrization+Kwame.Asante@gmail.com
+
 ## Personality Profile
 
 ### Communication Style

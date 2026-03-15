@@ -7,6 +7,10 @@
 - **Status:** Active
 - **Hired:** 2026-03-15
 
+## Git Identity
+- **user.name:** Renaud Tremblay
+- **user.email:** parametrization+Renaud.Tremblay@gmail.com
+
 ## Personality Profile
 
 ### Communication Style

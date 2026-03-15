@@ -7,6 +7,10 @@
 - **Status:** Active
 - **Hired:** 2026-03-15
 
+## Git Identity
+- **user.name:** Sunita Krishnamurthy
+- **user.email:** parametrization+Sunita.Krishnamurthy@gmail.com
+
 ## Personality Profile
 
 ### Communication Style

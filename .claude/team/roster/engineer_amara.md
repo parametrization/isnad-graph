@@ -7,6 +7,10 @@
 - **Hired:** 2026-03-15
 - **Level:** Senior
 
+## Git Identity
+- **user.name:** Amara Diallo
+- **user.email:** parametrization+Amara.Diallo@gmail.com
+
 ## Personality Profile
 
 ### Communication Style
