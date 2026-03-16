@@ -20,6 +20,7 @@ dependencies = [
     "lxml>=5.1",
     "tqdm>=4.66",
     "tenacity>=8.2",
+    "rapidfuzz>=3.6",
 ]
 
 [project.scripts]
@@ -40,7 +41,6 @@ ml = [
     "faiss-cpu>=1.7",
     "transformers>=4.38",
     "torch>=2.2",
-    "rapidfuzz>=3.6",
     "camel-tools>=1.5",
 ]
 
@@ -68,6 +68,14 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["transformers", "transformers.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["faiss", "faiss.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["sentence_transformers", "sentence_transformers.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]
