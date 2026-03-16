@@ -8,6 +8,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.api.middleware import (
+    RateLimitMiddleware,
+    RequestSizeLimitMiddleware,
+    SecurityHeadersMiddleware,
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -36,6 +42,9 @@ def create_app() -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(RequestSizeLimitMiddleware, max_body_size=1_048_576)
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=120)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -62,4 +71,8 @@ def create_app() -> FastAPI:
     app.include_router(search.router, prefix="/api/v1", tags=["search"])
     app.include_router(parallels.router, prefix="/api/v1", tags=["parallels"])
     app.include_router(timeline.router, prefix="/api/v1", tags=["timeline"])
+
+    from src.auth.twofa import router as twofa_router
+
+    app.include_router(twofa_router, tags=["2fa"])
     return app
