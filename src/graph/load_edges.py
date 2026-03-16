@@ -66,7 +66,7 @@ def _chunked_read(
 def _read_parquet_rows(path: Path) -> list[dict[str, Any]]:
     """Read a Parquet file and return row dicts."""
     table = pq.read_table(path)
-    return _transpose_pydict(table.to_pydict())
+    return table.to_pylist()
 
 
 def _parquet_files(directory: Path, prefix: str) -> list[Path]:
