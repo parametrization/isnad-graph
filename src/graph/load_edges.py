@@ -40,15 +40,6 @@ class EdgeLoadResult:
 # ---------------------------------------------------------------------------
 
 
-def _transpose_pydict(col_dict: dict[str, list[Any]]) -> list[dict[str, Any]]:
-    """Convert column-oriented dict ``{col: [vals]}`` to ``[{col: val}, ...]``."""
-    if not col_dict:
-        return []
-    keys = list(col_dict.keys())
-    n = len(col_dict[keys[0]])
-    return [{k: col_dict[k][i] for k in keys} for i in range(n)]
-
-
 def _chunked_read(
     client: Neo4jClient,
     query: str,
