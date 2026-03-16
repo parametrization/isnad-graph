@@ -5,8 +5,15 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from src.api.middleware import (
+    RateLimitMiddleware,
+    RequestSizeLimitMiddleware,
+    SecurityHeadersMiddleware,
+    require_auth,
+)
 
 
 @asynccontextmanager
@@ -36,6 +43,9 @@ def create_app() -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(RequestSizeLimitMiddleware, max_body_size=1_048_576)
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=120)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -44,6 +54,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     from src.api.routes import (
+        auth,
         collections,
         graph,
         hadiths,
@@ -54,12 +65,55 @@ def create_app() -> FastAPI:
         timeline,
     )
 
+    # Public routes — no auth required
     app.include_router(health.router, tags=["health"])
-    app.include_router(narrators.router, prefix="/api/v1", tags=["narrators"])
-    app.include_router(hadiths.router, prefix="/api/v1", tags=["hadiths"])
-    app.include_router(collections.router, prefix="/api/v1", tags=["collections"])
-    app.include_router(graph.router, prefix="/api/v1", tags=["graph"])
-    app.include_router(search.router, prefix="/api/v1", tags=["search"])
-    app.include_router(parallels.router, prefix="/api/v1", tags=["parallels"])
-    app.include_router(timeline.router, prefix="/api/v1", tags=["timeline"])
+    app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
+
+    # Protected routes — require valid Bearer token
+    app.include_router(
+        narrators.router,
+        prefix="/api/v1",
+        tags=["narrators"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        hadiths.router,
+        prefix="/api/v1",
+        tags=["hadiths"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        collections.router,
+        prefix="/api/v1",
+        tags=["collections"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        graph.router,
+        prefix="/api/v1",
+        tags=["graph"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        search.router,
+        prefix="/api/v1",
+        tags=["search"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        parallels.router,
+        prefix="/api/v1",
+        tags=["parallels"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        timeline.router,
+        prefix="/api/v1",
+        tags=["timeline"],
+        dependencies=[Depends(require_auth)],
+    )
+
+    from src.auth.twofa import router as twofa_router
+
+    app.include_router(twofa_router, tags=["2fa"])
     return app
