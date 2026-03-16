@@ -5,8 +5,15 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from src.api.middleware import (
+    RateLimitMiddleware,
+    RequestSizeLimitMiddleware,
+    SecurityHeadersMiddleware,
+    require_auth,
+)
 
 
 @asynccontextmanager
@@ -25,22 +32,109 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.neo4j.close()
 
 
+OPENAPI_TAGS = [
+    {
+        "name": "health",
+        "description": "Health and readiness checks.",
+    },
+    {
+        "name": "auth",
+        "description": "OAuth login, token refresh, logout, and user profile.",
+    },
+    {
+        "name": "2fa",
+        "description": "Two-factor authentication enrollment and verification.",
+    },
+    {
+        "name": "narrators",
+        "description": "Look up narrators, their biographies, chains, and ego-networks.",
+    },
+    {
+        "name": "hadiths",
+        "description": "Retrieve individual hadiths and their chain visualizations.",
+    },
+    {
+        "name": "collections",
+        "description": "Browse hadith collections (Sunni and Shia).",
+    },
+    {
+        "name": "graph",
+        "description": "Raw graph queries — shortest paths, subgraphs, community detection.",
+    },
+    {
+        "name": "search",
+        "description": "Full-text and semantic search across narrators and hadiths.",
+    },
+    {
+        "name": "parallels",
+        "description": "Cross-collection and cross-sectarian parallel hadith detection.",
+    },
+    {
+        "name": "timeline",
+        "description": "Historical timeline data for narrator activity and events.",
+    },
+]
+
+API_DESCRIPTION = """\
+# isnad-graph API
+
+Computational hadith analysis platform providing access to a Neo4j-backed graph
+of Sunni and Shia hadith collections, narrator networks, and isnad (chain of
+narration) analysis.
+
+## Authentication
+
+All endpoints except `/health` and `/api/v1/auth/*` require a valid JWT bearer
+token. Obtain one via the OAuth login flow:
+
+1. `POST /api/v1/auth/login/{provider}` — get the provider's authorization URL
+2. Browser redirect → provider consent screen → callback
+3. `GET /api/v1/auth/callback/{provider}` — exchange code for access + refresh tokens
+4. Include `Authorization: Bearer <access_token>` on subsequent requests
+5. `POST /api/v1/auth/refresh` — rotate tokens before expiry
+
+Supported providers: **Google**, **Apple**, **Facebook**, **GitHub**.
+
+## Rate Limiting
+
+All endpoints are rate-limited to **120 requests/minute** per client IP.
+Exceeding the limit returns `429 Too Many Requests` with a `Retry-After` header.
+
+## Error Format
+
+```json
+{"detail": "Human-readable error message"}
+```
+
+Standard HTTP status codes: `400` bad request, `401` unauthorized,
+`404` not found, `413` body too large, `429` rate limited, `500` server error.
+"""
+
+
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
+    from src.config import get_settings
+
+    settings = get_settings()
     app = FastAPI(
         title="isnad-graph API",
-        description="Computational Hadith Analysis Platform",
+        description=API_DESCRIPTION,
         version="0.1.0",
         lifespan=lifespan,
+        openapi_tags=OPENAPI_TAGS,
     )
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(RequestSizeLimitMiddleware, max_body_size=1_048_576)
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=120)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000"],  # frontend dev server only
+        allow_origins=settings.cors_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )
     from src.api.routes import (
+        auth,
         collections,
         graph,
         hadiths,
@@ -51,12 +145,55 @@ def create_app() -> FastAPI:
         timeline,
     )
 
+    # Public routes — no auth required
     app.include_router(health.router, tags=["health"])
-    app.include_router(narrators.router, prefix="/api/v1", tags=["narrators"])
-    app.include_router(hadiths.router, prefix="/api/v1", tags=["hadiths"])
-    app.include_router(collections.router, prefix="/api/v1", tags=["collections"])
-    app.include_router(graph.router, prefix="/api/v1", tags=["graph"])
-    app.include_router(search.router, prefix="/api/v1", tags=["search"])
-    app.include_router(parallels.router, prefix="/api/v1", tags=["parallels"])
-    app.include_router(timeline.router, prefix="/api/v1", tags=["timeline"])
+    app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
+
+    # Protected routes — require valid Bearer token
+    app.include_router(
+        narrators.router,
+        prefix="/api/v1",
+        tags=["narrators"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        hadiths.router,
+        prefix="/api/v1",
+        tags=["hadiths"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        collections.router,
+        prefix="/api/v1",
+        tags=["collections"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        graph.router,
+        prefix="/api/v1",
+        tags=["graph"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        search.router,
+        prefix="/api/v1",
+        tags=["search"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        parallels.router,
+        prefix="/api/v1",
+        tags=["parallels"],
+        dependencies=[Depends(require_auth)],
+    )
+    app.include_router(
+        timeline.router,
+        prefix="/api/v1",
+        tags=["timeline"],
+        dependencies=[Depends(require_auth)],
+    )
+
+    from src.auth.twofa import router as twofa_router
+
+    app.include_router(twofa_router, tags=["2fa"])
     return app

@@ -358,6 +358,18 @@ deployments/phase{N}/wave-{M}
   ```
   Resolve any conflicts before pushing and creating the PR.
 
+### Worktree Cleanup
+
+**After every wave completes** (all PRs merged into the deployments branch), clean up stale worktrees:
+
+```bash
+git worktree prune
+```
+
+This removes references to worktrees whose directories no longer exist. Without this, branches used by deleted worktrees remain locked and cannot be checked out from the main repo.
+
+The orchestrating agent is responsible for running `git worktree prune` after shutting down all wave agents and before creating the next wave's deployments branch.
+
 ## Code Review & Tech Debt
 
 ### Peer Review
