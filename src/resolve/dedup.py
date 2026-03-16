@@ -19,7 +19,7 @@ from src.resolve.schemas import PARALLEL_LINKS_SCHEMA
 from src.utils.logging import get_logger
 
 if TYPE_CHECKING:
-    import faiss as faiss_mod  # type: ignore[import-untyped]
+    import faiss as faiss_mod  # type: ignore[import-not-found]
     import numpy as np
     import numpy.typing as npt
 
