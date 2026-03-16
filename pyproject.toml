@@ -37,6 +37,7 @@ dev = [
     "mypy>=1.8",
     "types-tqdm>=4.66",
     "types-pyyaml>=6.0.12.20250915",
+    "testcontainers[neo4j,postgres,redis]>=4.0",
 ]
 ml = [
     "sentence-transformers>=2.5",
@@ -80,6 +81,10 @@ ignore_missing_imports = true
 module = ["sentence_transformers", "sentence_transformers.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["testcontainers", "testcontainers.*"]
+ignore_missing_imports = true
+
 [tool.pydantic-mypy]
 init_forbid_extra = true
 init_typed = true
@@ -89,4 +94,7 @@ warn_uninitialized = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-markers = ["ml: marks tests requiring ML dependencies (sentence-transformers, faiss)"]
+markers = [
+    "ml: marks tests requiring ML dependencies (sentence-transformers, faiss)",
+    "integration: marks tests requiring Docker containers (Neo4j, PostgreSQL, Redis)",
+]
