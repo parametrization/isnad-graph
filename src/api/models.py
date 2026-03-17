@@ -313,3 +313,242 @@ class TimelineRangeResponse(BaseModel):
 
     min_year_ah: int
     max_year_ah: int
+
+
+# --- Admin models ---
+
+
+class UserAdminResponse(BaseModel):
+    """Admin view of a user."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    email: str
+    name: str
+    provider: str
+    is_admin: bool = False
+    is_suspended: bool = False
+    created_at: str
+    role: str | None = None
+
+
+class UserUpdateRequest(BaseModel):
+    """Request body for updating a user via admin endpoint."""
+
+    model_config = ConfigDict(frozen=True)
+
+    is_admin: bool | None = None
+    is_suspended: bool | None = None
+    role: str | None = None
+
+
+class SystemHealthResponse(BaseModel):
+    """System health response with per-service status."""
+
+    model_config = ConfigDict(frozen=True)
+
+    status: str
+    neo4j: bool
+    postgres: bool
+    redis: bool
+
+
+class ContentStatsResponse(BaseModel):
+    """Content statistics for the admin dashboard."""
+
+    model_config = ConfigDict(frozen=True)
+
+    hadith_count: int
+    narrator_count: int
+    collection_count: int
+    coverage_pct: float
+
+
+class PopularNarrator(BaseModel):
+    """A popular narrator entry for analytics."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    name: str
+    query_count: int
+
+
+class UsageAnalyticsResponse(BaseModel):
+    """Usage analytics for the admin dashboard."""
+
+    model_config = ConfigDict(frozen=True)
+
+    search_volume: int
+    api_call_count: int
+    popular_narrators: list[PopularNarrator]
+
+
+# --- Moderation models ---
+
+
+class ModerationItemResponse(BaseModel):
+    """A flagged content item awaiting moderation."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    entity_type: str
+    entity_id: str
+    reason: str
+    status: str
+    flagged_by: str | None = None
+    flagged_at: str
+    resolved_by: str | None = None
+    resolved_at: str | None = None
+    notes: str | None = None
+
+
+class ModerationFlagRequest(BaseModel):
+    """Request body for flagging content."""
+
+    model_config = ConfigDict(frozen=True)
+
+    entity_type: str
+    entity_id: str
+    reason: str
+
+
+class ModerationUpdateRequest(BaseModel):
+    """Request body for approving/rejecting flagged content."""
+
+    model_config = ConfigDict(frozen=True)
+
+    status: str
+    notes: str | None = None
+
+
+# --- System report models ---
+
+
+class PipelineMetrics(BaseModel):
+    """Pipeline parse/staging metrics."""
+
+    model_config = ConfigDict(frozen=True)
+
+    total_files: int
+    total_rows: int
+    files: list[dict[str, object]]
+
+
+class DisambiguationMetrics(BaseModel):
+    """Disambiguation rate metrics per source."""
+
+    model_config = ConfigDict(frozen=True)
+
+    ner_mention_count: int
+    canonical_narrator_count: int
+    ambiguous_count: int
+    resolution_rate_pct: float
+    ambiguous_pct: float
+
+
+class DedupMetrics(BaseModel):
+    """Dedup/parallel coverage metrics."""
+
+    model_config = ConfigDict(frozen=True)
+
+    parallel_links_count: int
+    parallel_verbatim: int
+    parallel_close_paraphrase: int
+    parallel_thematic: int
+    parallel_cross_sect: int
+
+
+class GraphValidationMetrics(BaseModel):
+    """Graph validation results."""
+
+    model_config = ConfigDict(frozen=True)
+
+    orphan_narrators: int
+    orphan_hadiths: int
+    chain_integrity_pct: float
+    collection_coverage_pct: float
+
+
+class TopicCoverageMetrics(BaseModel):
+    """Topic classification coverage."""
+
+    model_config = ConfigDict(frozen=True)
+
+    total_hadiths: int
+    classified_count: int
+    coverage_pct: float
+
+
+class SystemReportResponse(BaseModel):
+    """Aggregated system output report."""
+
+    model_config = ConfigDict(frozen=True)
+
+    pipeline: PipelineMetrics | None = None
+    disambiguation: DisambiguationMetrics | None = None
+    dedup: DedupMetrics | None = None
+    graph_validation: GraphValidationMetrics | None = None
+    topic_coverage: TopicCoverageMetrics | None = None
+
+
+# --- System config models ---
+
+FORBIDDEN_CONFIG_KEYS = frozenset(
+    {
+        "jwt_secret",
+        "neo4j_password",
+        "pg_dsn",
+        "sunnah_api_key",
+        "kaggle_key",
+        "google_client_secret",
+        "apple_client_secret",
+        "facebook_client_secret",
+        "github_client_secret",
+    }
+)
+
+
+class SystemConfig(BaseModel):
+    """Runtime system configuration (no secrets)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    rate_limit_per_minute: int = 60
+    cors_origins: list[str] = ["http://localhost:3000"]
+    feature_flags: dict[str, bool] = {}
+    max_search_results: int = 100
+    max_pagination_limit: int = 100
+
+
+class SystemConfigUpdate(BaseModel):
+    """Partial update for system configuration."""
+
+    rate_limit_per_minute: int | None = None
+    cors_origins: list[str] | None = None
+    feature_flags: dict[str, bool] | None = None
+    max_search_results: int | None = None
+    max_pagination_limit: int | None = None
+
+
+class ConfigAuditEntry(BaseModel):
+    """A single config audit log entry."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: str
+    old_value: str
+    new_value: str
+    changed_by: str
+    changed_at: str
+
+
+class ConfigAuditResponse(BaseModel):
+    """Paginated config audit log."""
+
+    model_config = ConfigDict(frozen=True)
+
+    entries: list[ConfigAuditEntry]
+    total: int

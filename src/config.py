@@ -49,8 +49,22 @@ class AuthSettings(BaseSettings):
     facebook_client_secret: str = ""
     github_client_id: str = ""
     github_client_secret: str = ""
+    oauth_redirect_base_url: str = "http://localhost:8000"
 
     model_config = SettingsConfigDict(env_prefix="AUTH_")
+
+
+class SecurityHeaderSettings(BaseSettings):
+    """Configurable security headers. Production defaults; override for dev."""
+
+    content_security_policy: str = "default-src 'self'"
+    hsts_max_age: int = 63072000
+    hsts_include_subdomains: bool = True
+    x_frame_options: str = "DENY"
+    referrer_policy: str = "strict-origin-when-cross-origin"
+    permissions_policy: str = "camera=(), microphone=(), geolocation=()"
+
+    model_config = SettingsConfigDict(env_prefix="SECURITY_")
 
 
 class Settings(BaseSettings):
@@ -60,6 +74,7 @@ class Settings(BaseSettings):
     postgres: PostgresSettings = PostgresSettings()
     redis: RedisSettings = RedisSettings()
     auth: AuthSettings = AuthSettings()
+    security_headers: SecurityHeaderSettings = SecurityHeaderSettings()
 
     sunnah_api_key: str = ""
     kaggle_username: str = ""
