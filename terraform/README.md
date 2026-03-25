@@ -4,7 +4,7 @@ Provisions a Hetzner Cloud VPS (CPX41) for the isnad-graph production deployment
 
 ## Resources Created
 
-- **VPS**: CPX41 (8 vCPU, 16 GB RAM) running Ubuntu 24.04 in Ashburn (ash-dc1)
+- **VPS**: CPX41 (8 vCPU, 16 GB RAM) running Ubuntu 24.04 in Ashburn (ash)
 - **Firewall**: Allows inbound TCP on ports 22 (SSH), 80 (HTTP), 443 (HTTPS); denies all else
 - **SSH Key**: Uploaded from a local public key file
 
@@ -47,7 +47,7 @@ ssh_public_key_path = "~/.ssh/id_ed25519.pub"
 | `ssh_public_key_path` | Path to SSH public key | `~/.ssh/id_ed25519.pub` |
 | `server_type` | Hetzner server type | `cpx41` |
 | `server_name` | Instance name | `isnad-graph-prod` |
-| `datacenter` | Hetzner datacenter | `ash-dc1` |
+| `location` | Hetzner location | `ash` |
 
 ## Outputs
 

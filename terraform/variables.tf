@@ -22,10 +22,10 @@ variable "server_name" {
   default     = "isnad-graph-prod"
 }
 
-variable "datacenter" {
-  description = "Hetzner Cloud datacenter"
+variable "location" {
+  description = "Hetzner Cloud location"
   type        = string
-  default     = "ash-dc1"
+  default     = "ash"
 }
 
 variable "ssh_source_ips" {

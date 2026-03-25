@@ -40,7 +40,7 @@ resource "hcloud_firewall" "web" {
 resource "hcloud_server" "app" {
   name        = var.server_name
   server_type = var.server_type
-  datacenter  = var.datacenter
+  location    = var.location
   image       = "ubuntu-24.04"
 
   ssh_keys = [hcloud_ssh_key.deploy.id]
