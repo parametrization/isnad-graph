@@ -27,6 +27,16 @@ jobs:
       - run: uv run ruff format --check src/ tests/
       - run: uv run mypy src/
 
+  # NOTE: security-audit is a REQUIRED status check on the main branch.
+  # Branch protection enforces that this job must pass before any PR can merge.
+  # If this job fails:
+  #   1. Check pip-audit output for new CVEs — add --ignore-vuln for false
+  #      positives or update the vulnerable dependency.
+  #   2. Check gitleaks output for leaked secrets — remove the secret from
+  #      the commit history (use git-filter-repo) and rotate the credential.
+  #   3. Do NOT bypass or disable this check — it is required by policy.
+  #   4. If a CVE has no fix available yet, document a temporary --ignore-vuln
+  #      with a linked tracking issue and expiry date.
   security-audit:
     runs-on: ubuntu-latest
     steps:
