@@ -212,4 +212,13 @@ def create_app() -> FastAPI:
     from src.auth.twofa import router as twofa_router
 
     app.include_router(twofa_router, tags=["2fa"])
+
+    from prometheus_fastapi_instrumentator import Instrumentator
+
+    Instrumentator(
+        should_group_status_codes=True,
+        should_ignore_untemplated=True,
+        excluded_handlers=["/metrics"],
+    ).instrument(app).expose(app, include_in_schema=False)
+
     return app
