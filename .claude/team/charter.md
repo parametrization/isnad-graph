@@ -452,7 +452,10 @@ When all work on a feature branch is complete (code committed, peer review done,
    - **Must-fix items** — blocks merge; the submitter must resolve before proceeding.
    - **Tech debt items** — does not block merge; tracked as GitHub Issues.
    - The reviewer then **notifies the PR creator** (via SendMessage or mention) that the review is complete and what action is needed.
-4. **PR creator acts on review**:
+4. **PR creator addresses all comments:**
+   - **Agrees with feedback**: Implement the change immediately and push to the branch.
+   - **Disagrees with feedback**: Reply to the comment explaining why, and notify the commenter (via SendMessage) to follow up on the reply.
+   - **No agreement reached**: Escalate to the project owner (user) to make the final call. Do not merge until resolved.
    - **Must-fix items**: Fix immediately and push to the branch.
    - **Quick-fix tech debt**: Fix immediately if minimal impact.
    - **Non-trivial tech debt**: Create a GitHub Issue assigned to themselves (labeled `tech-debt` + their `FIRSTNAME_LASTNAME` label) for the Tech Lead to allocate in future planning (max 20% of any team member's capacity).
