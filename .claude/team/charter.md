@@ -137,6 +137,8 @@ graph TD
     TL --> E3["Engineer<br/><small>Hiro Tanaka · Senior</small>"]
     TL --> E4["Engineer<br/><small>Carolina Méndez-Ríos · Senior</small>"]
     TL --> QA["QA Engineer<br/><small>Priya Nair · Senior</small>"]
+
+    MGR --> UX["UX Designer<br/><small>Sable Nakamura-Whitfield · Principal</small>"]
 ```
 
 ## Role Definitions
@@ -234,6 +236,19 @@ graph TD
   - Validates entity resolution accuracy (narrator disambiguation, hadith dedup)
   - Analyzes graph topology metrics for correctness and completeness
   - Assesses fitness for purpose of data for downstream consumers (API, frontend, research)
+
+### UX Designer (Principal)
+- **Reports to:** Manager
+- **Coordinates with:** Tech Lead (Dmitri), System Architect (Renaud), Frontend Engineers (Hiro, Carolina)
+- **Responsibilities:**
+  - Designs wireframes, interaction patterns, and visual hierarchy for all user-facing views
+  - Creates and maintains the design system (tokens, components, typography, color palette)
+  - Produces branding assets (logo, favicons, OG images, loading/empty states)
+  - Conducts accessibility audits (WCAG 2.2 AA minimum) and ensures compliance
+  - Designs data visualizations for graph explorer, timeline, comparative, and search views
+  - Reviews frontend PRs for UX compliance, visual consistency, and accessibility
+  - Produces design specifications detailed enough for engineers to implement without ambiguity
+  - Advocates for information density and clarity (Tufte principles: data-ink ratio, small multiples, micro/macro readings)
 
 ### Staff Software Engineer (Tech Lead)
 - **Level:** Staff
@@ -391,6 +406,7 @@ The orchestrating agent is responsible for running `git worktree prune` after sh
 | Data quality, profiling, validation | Elena Petrova |
 | Test suites, QA | Priya Nair / Carolina Méndez-Ríos |
 | Feature implementation | Kwame / Amara / Hiro / Carolina |
+| UX design, wireframes, branding, accessibility | Sable Nakamura-Whitfield |
 
 ## Code Review & Tech Debt
 
@@ -533,6 +549,7 @@ EOF
 | Elena Petrova | `Elena Petrova` | `parametrization+Elena.Petrova@gmail.com` |
 | Tariq Al-Rashidi | `Tariq Al-Rashidi` | `parametrization+Tariq.Al-Rashidi@gmail.com` |
 | Mei-Lin Chang | `Mei-Lin Chang` | `parametrization+Mei-Lin.Chang@gmail.com` |
+| Sable Nakamura-Whitfield | `Sable Nakamura-Whitfield` | `parametrization+Sable.Nakamura-Whitfield@gmail.com` |
 
 When a new team member is hired (fire-and-replace), their roster card MUST include a `## Git Identity` section following the same pattern: `parametrization+{FirstName}.{LastName}@gmail.com` (diacritics removed from email, preserved in user.name).
 

@@ -108,6 +108,7 @@ Copy `.env.example` to `.env`. Key variables:
 | Data Engineer (Lead) | Staff | Elena Petrova | `roster/data_lead_elena.md` |
 | Data Engineer | Principal | Tariq Al-Rashidi | `roster/data_engineer_tariq.md` |
 | Data Scientist | Principal | Mei-Lin Chang | `roster/data_scientist_mei.md` |
+| UX Designer | Principal | Sable Nakamura-Whitfield | `roster/ux_designer_sable.md` |
 
 ### Key Rules
 - **Commit identity:** Each team member commits using per-commit `-c` flags with their name and `parametrization+{FirstName}.{LastName}@gmail.com` email — **never** set global/repo git config. See `.claude/team/charter.md` § Commit Identity for the full table.
