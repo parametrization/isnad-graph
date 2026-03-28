@@ -16,8 +16,13 @@ import type {
 
 const API_BASE = '/api/v1'
 
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('access_token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url)
+  const res = await fetch(url, { headers: getAuthHeaders() })
   if (!res.ok) {
     throw new Error(`API error: ${res.status} ${res.statusText}`)
   }
@@ -145,7 +150,7 @@ export async function updateModerationItem(
   if (notes) body.notes = notes
   const res = await fetch(`${API_BASE}/admin/moderation/${encodeURIComponent(id)}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`)
@@ -159,7 +164,7 @@ export async function flagContent(
 ): Promise<ModerationItem> {
   const res = await fetch(`${API_BASE}/admin/moderation/flag`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({ entity_type: entityType, entity_id: entityId, reason }),
   })
   if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`)
