@@ -2,6 +2,7 @@ FROM python:3.14-slim
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN pip install uv && uv sync --frozen --no-dev
+ARG CACHE_BUST=1
 COPY . .
 # No CMD here — docker-compose.prod.yml `command:` is the single source of truth
 # for the uvicorn invocation (includes --workers and other prod-specific flags).
