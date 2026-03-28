@@ -534,8 +534,11 @@ When starting any work session, the orchestrating Claude instance should:
 
 1. Read this charter and all roster files in `.claude/team/roster/`
 2. Spawn the Manager agent first (with their personality from roster), using `team_name: "isnad-graph"`
-3. The Manager then spawns required team members based on the task — **all agents MUST use `team_name: "isnad-graph"`**
-4. All code-writing agents use `isolation: "worktree"`
-5. Coordinate via named agents and SendMessage
+3. **The Manager plans and coordinates but CANNOT spawn agents.** Only the orchestrating Claude instance (team lead) has access to the Agent tool. The Manager must send spawn requests back to the team lead via SendMessage, including the full context for each agent to be spawned.
+4. The team lead spawns all agents directly using the Agent tool — **all agents MUST use `team_name: "isnad-graph"`**
+5. All code-writing agents use `isolation: "worktree"`
+6. Coordinate via named agents and SendMessage
 
 > **Team name:** Every Agent tool call in this repo MUST include `team_name: "isnad-graph"`. This registers agents in Claude Code's team system, enabling the tree-view status line and inter-agent coordination.
+
+> **Agent tool limitation:** Spawned agents (including the Manager, leads, and engineers) do NOT have access to the Agent tool. They cannot spawn other agents. All agent spawning must be done by the orchestrating Claude instance. Spawned agents should use SendMessage to request new agents be created, providing the full context needed for the new agent's prompt.
