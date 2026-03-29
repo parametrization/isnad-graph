@@ -390,7 +390,8 @@ The orchestrating agent is responsible for running `git worktree prune` after sh
 
 **Every spawned agent MUST map to a team roster member.** No anonymous functional agents.
 
-- **Naming pattern:** `{firstname}-{task-description}` (e.g., `tomasz-ci-fix`, `fatima-issue-audit`)
+- **Naming pattern:** `{firstname}-p{phase}w{wave}[-L{layer}]-{task-description}` (e.g., `tomasz-p11w1-ci-fix`, `kwame-p11w2-L3-registration`)
+- Include the layer suffix (`-L{N}`) when the wave uses sequenced layers; omit it for single-layer waves
 - The orchestrator determines the most appropriate team member for the task BEFORE spawning
 - Tasks are assigned based on role fit (DevOps tasks → Tomasz, security → Yara, tests → Carolina, etc.)
 - **Violations:** Agents named with functional-only names (e.g., `ci-fixer`, `issue-closer`, `wave1-p7-launcher`) are NOT allowed
