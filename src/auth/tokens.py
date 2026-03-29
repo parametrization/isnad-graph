@@ -30,6 +30,7 @@ def create_access_token(
     payload = {
         "sub": user_id,
         "type": "access",
+        "role": role,
         "exp": expire,
         "iat": datetime.now(UTC),
         "jti": secrets.token_hex(16),

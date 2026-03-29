@@ -5,7 +5,9 @@ from __future__ import annotations
 import ipaddress
 import time
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import structlog
@@ -15,7 +17,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
-from src.auth.models import User
+from src.auth.models import ROLE_HIERARCHY, Role, User
 
 if TYPE_CHECKING:
     from src.config import SecurityHeaderSettings
@@ -83,20 +85,24 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-def _parse_trusted_proxies(raw: str) -> list[ipaddress.IPv4Network | ipaddress.IPv6Network]:
-    """Parse a comma-separated list of trusted proxy CIDRs/IPs into network objects."""
+@lru_cache(maxsize=4)
+def _parse_trusted_proxies(raw: str) -> tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...]:
+    """Parse a comma-separated list of trusted proxy CIDRs/IPs into network objects.
+
+    Results are cached since the trusted_proxies setting is immutable at runtime.
+    """
     networks: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
     for entry in raw.split(","):
         entry = entry.strip()
         if not entry:
             continue
         networks.append(ipaddress.ip_network(entry, strict=False))
-    return networks
+    return tuple(networks)
 
 
 def _is_trusted_proxy(
     client_host: str,
-    trusted: list[ipaddress.IPv4Network | ipaddress.IPv6Network],
+    trusted: tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...],
 ) -> bool:
     """Return True if *client_host* falls within any trusted proxy network."""
     try:
@@ -271,10 +277,29 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
+def require_role(min_role: Role) -> Callable[[Request], Awaitable[User]]:
+    """Factory that returns a FastAPI dependency enforcing a minimum role level."""
+
+    async def _check(request: Request) -> User:
+        user = await require_auth(request)
+        user_level = ROLE_HIERARCHY.get(user.role or Role.VIEWER, 0)
+        required_level = ROLE_HIERARCHY.get(min_role, 0)
+        if user_level < required_level:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Requires role {min_role.value} or higher",
+            )
+        return user
+
+    return _check
+
+
 async def require_admin(request: Request) -> User:
-    """Require authenticated user with is_admin=True. Return 403 if not admin."""
+    """Require authenticated user with admin role or is_admin flag."""
     user = await require_auth(request)
-    if not user.is_admin:
+    role_str = user.role or Role.VIEWER
+    is_admin_role = ROLE_HIERARCHY.get(role_str, 0) >= ROLE_HIERARCHY[Role.ADMIN]
+    if not user.is_admin and not is_admin_role:
         raise HTTPException(status_code=403, detail="Admin access required")
     return user
 
@@ -282,14 +307,23 @@ async def require_admin(request: Request) -> User:
 async def require_auth(request: Request) -> User:
     """FastAPI dependency that requires a valid Bearer token.
 
-    Extracts the JWT from the Authorization header, verifies it,
-    and returns a User object. Raises 401 if the token is missing or invalid.
+    Extracts the JWT from the Authorization header (preferred) or falls back
+    to the ``access_token`` httpOnly cookie for browser-based auth.
+    Raises 401 if no valid token is found.
     """
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    token: str | None = None
 
-    token = auth_header.removeprefix("Bearer ")
+    # Prefer Authorization header (for API clients that send both)
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.removeprefix("Bearer ")
+
+    # Fall back to httpOnly cookie
+    if token is None:
+        token = request.cookies.get("access_token")
+
+    if token is None:
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
 
     from src.auth.tokens import verify_token
 
@@ -306,6 +340,10 @@ async def require_auth(request: Request) -> User:
     if not isinstance(user_id, str):
         raise HTTPException(status_code=401, detail="Invalid token payload")
 
+    # Extract role from JWT claims (defaults to viewer)
+    raw_role = payload.get("role")
+    role = raw_role if isinstance(raw_role, str) else Role.VIEWER.value
+
     return User(
         id=user_id,
         email=f"{user_id}@placeholder",
@@ -313,4 +351,5 @@ async def require_auth(request: Request) -> User:
         provider="jwt",
         provider_user_id=user_id,
         created_at=datetime.now(UTC),
+        role=role,
     )
