@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from 'react'
 import { createElement } from 'react'
 import { API_BASE } from '../config'
 
@@ -13,6 +20,8 @@ interface AuthContextValue {
   user: AuthUser | null
   loading: boolean
   isAdmin: boolean
+  isAuthenticated: boolean
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -22,15 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      setLoading(false)
-      return
-    }
-
-    fetch(`${API_BASE}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    fetch(`${API_BASE}/auth/me`, { credentials: 'include' })
       .then((res) => {
         if (!res.ok) throw new Error('Unauthorized')
         return res.json()
@@ -40,10 +41,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false))
   }, [])
 
+  const logout = useCallback(async () => {
+    try {
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch {
+      // Clear local state even if the server call fails
+    }
+    setUser(null)
+    window.location.href = '/login'
+  }, [])
+
   const value: AuthContextValue = {
     user,
     loading,
     isAdmin: user?.is_admin ?? false,
+    isAuthenticated: user !== null,
+    logout,
   }
 
   return createElement(AuthContext.Provider, { value }, children)
