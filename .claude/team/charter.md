@@ -554,6 +554,45 @@ EOF
 
 When a new team member is hired (fire-and-replace), their roster card MUST include a `## Git Identity` section following the same pattern: `parametrization+{FirstName}.{LastName}@gmail.com` (diacritics removed from email, preserved in user.name).
 
+## Automated Enforcement Hooks (Claude Code)
+
+The following charter rules are enforced automatically via Claude Code hooks in `.claude/settings.json`. These are PreToolUse hooks that fire before Bash commands. Hook scripts live in `.claude/hooks/`.
+
+### Hook 1: Validate Commit Identity (`validate_commit_identity.py`)
+
+- **What it automates:** § Commit Identity — validates that every `git commit` command includes `-c user.name=` and `-c user.email=` flags matching a roster member.
+- **Augments:** The Commit Identity section above. The manual rule still applies; this hook enforces it automatically.
+- **Manual steps remaining:** When a new team member is hired, their name and email must be added to the `ROSTER` dict in `.claude/hooks/validate_commit_identity.py`.
+- **Emergency override:** Remove or comment out the hook entry in `.claude/settings.json`. Re-add after the emergency.
+
+### Hook 2: Block `--no-verify` (`block_no_verify.py`)
+
+- **What it automates:** Prevents engineers from using `--no-verify` on git commit, which bypasses pre-commit hooks.
+- **Augments:** General code quality and CI enforcement rules. Pre-commit hooks are a required gate.
+- **Manual steps remaining:** None — the hook is fully automated.
+- **Emergency override:** Remove the hook entry from `.claude/settings.json`. The user can also run git commands directly outside Claude Code.
+
+### Hook 3: Block `git config` (`block_git_config.py`)
+
+- **What it automates:** § Commit Identity — blocks all `git config` commands (both read and write) to prevent accidental or intentional modification of global/repo-level git config.
+- **Augments:** The charter rule "do NOT modify the global or repo-level git config."
+- **Manual steps remaining:** None.
+- **Emergency override:** Remove the hook entry from `.claude/settings.json`.
+
+### Hook 4: Auto-set `ENVIRONMENT=test` (`auto_set_env_test.py`)
+
+- **What it automates:** Ensures `ENVIRONMENT=test` is set before any `pytest`, `uv run pytest`, or `make test` command. Prevents CI breaks caused by missing environment variable (ref: #440).
+- **Augments:** Testing workflow. This is a new automated safeguard, not replacing a prior manual rule.
+- **Manual steps remaining:** None — the hook blocks and instructs the user to prepend `ENVIRONMENT=test`.
+- **Emergency override:** Remove the hook entry from `.claude/settings.json`.
+
+### Hook 5: Validate Labels Before `gh issue create` (`validate_labels.py`)
+
+- **What it automates:** § GitHub Label Hygiene — validates that all `--label` values exist in the repository before `gh issue create` runs.
+- **Augments:** The label hygiene section. The manual rule to run `gh label list` first is now enforced automatically.
+- **Manual steps remaining:** None — the hook fetches labels and validates automatically.
+- **Emergency override:** Remove the hook entry from `.claude/settings.json`. If `gh label list` is unavailable (network issue), the hook allows the command with a warning.
+
 ## How to Instantiate the Team
 
 When starting any work session, the orchestrating Claude instance should:
@@ -670,7 +709,7 @@ After every wave completes and the deployments branch is PR'd to main:
 2. Update any stale diagrams or documentation.
 3. The System Architect (Renaud) owns diagram accuracy; the Manager owns doc accuracy.
 
-## Automated Enforcement
+## Automated Enforcement (Git Hooks)
 
 ### Pre-commit Hook: Branch Ownership (#494)
 
@@ -715,3 +754,86 @@ After every wave completes and the deployments branch is PR'd to main:
 **Remaining manual steps:** Peer reviewers must still post an explicit approval (via GitHub review, not just a comment). The ruleset enforces the review but does not verify the reviewer is the designated peer from the wave kickoff.
 
 **Emergency override:** Repository admins can bypass the ruleset via the GitHub UI (Settings → Rules → "Require review on deployments branches" → add bypass actor). This should only be used for hotfix scenarios with Manager approval.
+
+## Automated Skills (Claude Code)
+
+The following Claude Code skills automate recurring team processes. Each skill is a markdown file in `.claude/skills/` and is invoked via `/skill-name` in Claude Code.
+
+### `/wave-kickoff` — Automated Wave Planning
+
+**Skill file:** `.claude/skills/wave-kickoff.md`
+
+**Replaces manual steps in:** § Branching Rules (deployments branch creation), § Wave Planning & Priority (priority ordering), § GitHub Label Hygiene (label creation/validation), § Implementation Kickoff & Issue Assignment (labeling and kickoff comments).
+
+**What is automated:**
+- Deployments branch creation from main
+- Wave label creation and validation
+- Issue labeling (wave label + assignee label)
+- Kickoff comments on each issue with reviewer assignments
+- Execution plan generation with priority ordering (hotfixes → security → bugs → features)
+
+**What remains manual:**
+- User must approve the execution plan before implementation starts
+- User decides which issues to include in the wave
+- Cross-team dependency resolution still requires lead coordination
+
+**Emergency override:** Skip the skill and perform each step manually using `gh` CLI commands per § Branching Rules and § Implementation Kickoff & Issue Assignment.
+
+### `/wave-retro` — Automated Wave Retrospective
+
+**Skill file:** `.claude/skills/wave-retro.md`
+
+**Replaces manual steps in:** § Wave Retrospectives (retro conversations, consolidation, process change proposals), § Feedback System (trust matrix updates, feedback logging), § Trust Identity Matrix (directional score adjustments).
+
+**What is automated:**
+- Merged PR and review comment collection
+- Per-engineer performance assessment (CI failures, must-fix counts, delivery quality)
+- Trust matrix updates on `CEO/0000-Trust_Matrix` branch
+- Feedback log append to `.claude/team/feedback_log.md`
+- Charter change proposals based on retro findings
+
+**What remains manual:**
+- User must approve all charter changes before they are applied
+- Subjective severity calibration may need user override
+- User can veto specific trust matrix adjustments
+
+**Emergency override:** Run the retro manually per § Wave Retrospectives — Manager spawns retro conversations with leads, consolidates findings, presents to user.
+
+### `/team-reset` — Transparent Team Lifecycle Management
+
+**Skill file:** `.claude/skills/team-reset.md`
+
+**Replaces manual steps in:** § Team Lifecycle (TeamCreate / TeamDelete) (teardown transparency, force teardown, roster change reporting).
+
+**What is automated:**
+- Current team roster reporting to user
+- Shutdown requests to all active agents
+- Force teardown of unresponsive agents (config file cleanup)
+- TeamDelete and TeamCreate calls
+- Roster change highlighting (departures, hires, role changes)
+
+**What remains manual:**
+- The orchestrating Claude instance must still spawn individual agents after team creation
+- Roster file changes (hires/fires) must be committed separately
+- User may override the roster before TeamCreate
+
+**Emergency override:** Manually remove the config file (`~/.claude/teams/isnad-graph/config.json`) and recreate via TeamCreate.
+
+### `/wave-audit` — Close Orphaned Issues After Wave
+
+**Skill file:** `.claude/skills/wave-audit.md`
+
+**Replaces manual steps in:** § Issue Hygiene (close condition enforcement), § Bug Closure (closing issues when fix PRs merge).
+
+**What is automated:**
+- Cross-referencing merged PRs against open issues for the wave
+- Identifying orphans (implemented but not auto-closed) via `Closes #N` references and branch naming
+- Closing orphans with proper comments and `fixed-in-phase{N}-wave{M}` labels
+- Summary reporting of audit results
+
+**What remains manual:**
+- User must approve all closures before they execute
+- Issues with no implementing PR require manual triage
+- The skill relies on `Closes #N` references and branch naming — it does not verify implementation content
+
+**Emergency override:** Run `gh issue list --state open --label "p{N}-wave-{M}"` and close issues manually with `gh issue close`.
