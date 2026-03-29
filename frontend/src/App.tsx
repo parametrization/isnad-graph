@@ -16,6 +16,7 @@ import TimelinePage from './pages/TimelinePage'
 import ComparativePage from './pages/ComparativePage'
 import GraphExplorerPage from './pages/GraphExplorerPage'
 import LoginPage from './pages/LoginPage'
+import OAuthCallbackPage from './pages/OAuthCallbackPage'
 import UserManagementPage from './pages/admin/UserManagementPage'
 import SystemHealthPage from './pages/admin/SystemHealthPage'
 import ContentStatsPage from './pages/admin/ContentStatsPage'
@@ -41,7 +42,7 @@ export default function App() {
           <Routes>
             {/* Public routes — no auth required */}
             <Route path="login" element={<LoginPage />} />
-            <Route path="auth/callback/:provider" element={<div>Processing login...</div>} />
+            <Route path="auth/callback/:provider" element={<OAuthCallbackPage />} />
 
             {/* Protected routes — require authentication */}
             <Route element={<ProtectedRoute />}>
