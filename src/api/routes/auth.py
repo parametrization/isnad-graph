@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from src.api.middleware import require_auth
-from src.auth.models import AuthorizationUrlResponse, RefreshRequest, TokenResponse, User
+from src.auth.models import AuthorizationUrlResponse, TokenResponse, User
 from src.auth.providers import PROVIDERS, get_provider, retrieve_pkce_verifier, store_pkce_verifier
 from src.auth.tokens import create_access_token, create_refresh_token, revoke_token, verify_token
 from src.config import get_settings
@@ -76,10 +76,14 @@ async def callback(provider: str, code: str, state: str) -> TokenResponse:
 
 
 @router.post("/auth/refresh", response_model=TokenResponse)
-def refresh(body: RefreshRequest) -> TokenResponse:
-    """Refresh an access token using a valid refresh token (with rotation)."""
+def refresh(request: Request) -> TokenResponse:
+    """Refresh an access token using the refresh token from httpOnly cookie."""
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Missing refresh token")
+
     try:
-        payload = verify_token(body.refresh_token)
+        payload = verify_token(refresh_token)
     except ValueError:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")  # noqa: B904
 
@@ -91,7 +95,7 @@ def refresh(body: RefreshRequest) -> TokenResponse:
         raise HTTPException(status_code=401, detail="Invalid token payload")
 
     # Revoke the old refresh token (rotation)
-    revoke_token(body.refresh_token)
+    revoke_token(refresh_token)
 
     settings = get_settings().auth
     new_access = create_access_token(user_id)
