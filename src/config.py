@@ -31,6 +31,7 @@ class RateLimitSettings(BaseSettings):
 
     requests_per_minute: int = 120
     window_seconds: int = 60
+    trusted_proxies: str = "127.0.0.1,::1,172.16.0.0/12,10.0.0.0/8"
 
     model_config = SettingsConfigDict(env_prefix="RATE_LIMIT_")
 
