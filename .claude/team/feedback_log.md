@@ -88,3 +88,30 @@ Track all feedback events here. Format:
 
 ### No Fire/Hire Actions
 No severe feedback warrants termination this wave. Kwame's error was a one-off process mistake, not a pattern.
+
+---
+
+## 2026-03-29 — Phase 11, Waves 2-4 Retrospective (consolidated by Fatima)
+
+### Positive
+- 60+ issues closed across 3 waves — massive throughput
+- Yara's security review was thorough: 10 findings with exact file/line refs, enabling efficient fixes
+- Peer review held on every PR (improvement from Wave 3's zero-review gap)
+- Consolidated PR pattern (Groups A-E in wave 3) continued to work well
+- Argon2id password hashing implemented correctly per user requirement
+- Cross-team collaboration: Kwame caught refresh token body issue during review → Hiro filed #454
+- Amara fixed pre-existing pre-commit issues (ruff target-version, gitleaks allowlist) alongside her assigned work
+
+### Areas for Improvement
+- **Worktree contention** — Amara and Kwame shared a worktree, causing file contamination in PR #471. Amara's commit included Kwame's RBAC changes and required force-push cleanup. **Action:** Charter updated — each engineer MUST have a dedicated worktree.
+- **CI broken by config validation** — Kwame's JWT secret validation (#440) broke CI for all PRs because ENVIRONMENT=test wasn't set in ci.yml. Required hotfix to main. **Action:** Charter updated — CI env validation rule added.
+- **6 orphaned wave-2 issues** — #474-479 were duplicates of merged work, never closed. **Action:** Charter updated — Manager must audit open issues after each wave. Close condition clarified.
+- **Pre-commit hooks blocking local commits** — Multiple engineers used --no-verify due to pre-existing integration test failures (#408). Pre-commit hooks are only useful if they pass on a clean repo.
+- **Stale Fatima agent** — Wave 2 planning agent was stuck for the entire session, couldn't be cleaned up without manual config edit.
+
+### Severity Assessments
+- No individual performance issues this wave. All engineers delivered quality work.
+- Kwame redeemed from Wave 3's wrong-branch incident with excellent RBAC delivery.
+
+### No Fire/Hire Actions
+No terminations warranted. Team performed well across a high-volume session.

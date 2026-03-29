@@ -64,7 +64,7 @@ When a team member is fired:
 Every issue must be kept up to date:
 - **Status** — kept current (open, in progress, blocked, done).
 - **Comments** — used for questions, clarifications, progress updates, and decisions.
-- **Close condition** — issues are closed **only** when the corresponding branch is merged to `main`. Do not close prematurely.
+- **Close condition** — issues are closed when the corresponding PR is merged to the deployments branch. Use `Closes #N` in PR descriptions so GitHub auto-closes them. After each wave, the Manager must audit open issues against merged PRs and close any that were implemented but not auto-closed. Orphaned open issues create confusion about what work remains.
 
 #### Comment Format
 
@@ -367,6 +367,7 @@ deployments/phase{N}/wave-{M}
   git checkout deployments/phase{N}/wave-{M} && git pull && git checkout -b {FirstInitial}.{LastName}/{IIII}-{issue-name}
   ```
 - Worktree agents should similarly base their worktree on the deployments branch for their wave.
+- **Each engineer MUST have their own dedicated worktree.** Never share a worktree between multiple engineers. Shared worktrees cause file contention — one engineer's uncommitted changes contaminate another's commits, requiring force-push cleanups. When spawning agents with `isolation: "worktree"`, each agent gets its own worktree automatically.
 - **Worktree branch safety:** Each engineer must verify they are on their own branch before committing. Never commit to another engineer's branch. Before every commit, run `git branch --show-current` and confirm the branch name matches `{FirstInitial}.{LastName}/...`. If the branch doesn't match, switch to the correct branch before committing.
 - **Before submitting a PR**, the engineer must merge the latest from the deployments branch into their feature branch to avoid merge conflicts:
   ```bash
@@ -419,11 +420,13 @@ Every software engineering branch must be reviewed by **one other software engin
 
 ### Peer Review Assignments
 
-For each wave, the Tech Lead assigns specific peer reviewers **at wave kickoff, before implementation begins**:
+Review pairs are assigned **at wave planning time, before implementation begins** — not after PRs are created. This ensures both parties know the handoff point and the reviewer can begin as soon as the implementer's CI passes.
+
 - Each engineer's PR is reviewed by one designated peer (not self-selected)
 - Pairing rotates each wave to spread knowledge
 - The reviewer is responsible for running `make check` on the branch locally
 - **No PR may be merged without at least one peer review comment on the PR.** If the reviewer has no issues, they must still post an explicit approval comment (e.g., "Reviewed, LGTM"). This is a hard gate — not optional.
+- **Review pairs must be included in every spawn prompt** so the implementer and reviewer both know who they are working with at the start of implementation, not after PR creation.
 
 ### Tech Debt Triage (Submitter)
 
@@ -431,6 +434,13 @@ After receiving the review, the submitter evaluates each tech debt item:
 
 1. **Quick fix, minimal impact?** — Fix it immediately in the same branch.
 2. **Not quick or higher risk?** — Create a GitHub Issue assigned to themselves, labeled `tech-debt` and their `FIRSTNAME_LASTNAME` label, with a clear description of the debt and why it was deferred.
+
+### CI Environment Validation
+
+When adding startup validation (e.g., rejecting weak secrets, enforcing required config) that distinguishes between dev/test and production environments:
+1. **Verify CI still passes** before merging — the CI workflow must set the appropriate `ENVIRONMENT` variable or equivalent.
+2. **Verify pre-commit hooks still pass** — if hooks run tests, they need the same env config.
+3. If the change breaks CI, it is a **must-fix** before the PR can merge. Do not push config-breaking changes that require a separate hotfix to unblock other PRs.
 
 ### Tech Debt Management (Tech Lead)
 
@@ -455,9 +465,15 @@ When all work on a feature branch is complete (code committed, peer review done,
 4. **PR creator acts on review**:
    - **Must-fix items**: Fix immediately and push to the branch.
    - **Quick-fix tech debt**: Fix immediately if minimal impact.
-   - **Non-trivial tech debt**: Create a GitHub Issue assigned to themselves (labeled `tech-debt` + their `FIRSTNAME_LASTNAME` label) for the Tech Lead to allocate in future planning (max 20% of any team member's capacity).
+   - **Non-trivial tech debt**: Note for post-merge issue filing (see step 7).
 5. **Push final changes** from the review fixes.
 6. **The team merges** the PR into the deployments branch themselves — no user approval needed for PRs into deployments branches.
+7. **Post-merge tech debt filing (hard gate).** Immediately after merging, the PR creator MUST create a **separate GitHub Issue** for every non-blocking review comment that was not quick-fixed in the branch. This is not optional — it is a merge completion requirement. Each issue must:
+   - Be labeled `tech-debt` + the creator's `FIRSTNAME_LASTNAME` label
+   - Reference the PR number and the specific review comment it originated from
+   - Have clear acceptance criteria
+   - Be targeted at the next wave for the Tech Lead to allocate (max 20% of any engineer's capacity)
+   **A PR is not considered "done" until all tech-debt issues are filed.** The orchestrator will verify this before moving on to the next phase of work.
 
 ### Consolidated PRs for Shared Files
 
@@ -508,14 +524,30 @@ After creating a PR, **every team member** must follow this process:
 3. **If any CI job fails:**
    - Investigate the failure and attempt to fix the root cause.
    - Push the fix to the **same branch** (the PR will update automatically).
-   - Alert the project owner (user) with the following information:
-     - Which CI job failed
+   - **Notify the orchestrator immediately** via SendMessage (or by writing to a shared file if SendMessage to orchestrator is unavailable) with:
+     - Which CI job failed and the run number
      - Root cause of the failure
      - What was done to fix it
+     - Whether the failure is caused by a cross-PR dependency (i.e., another PR must merge first)
      - Whether project owner assistance is required
-4. **If the failure cannot be resolved:** Do **NOT** merge the PR. Notify the project owner immediately and pause all dependent work until the issue is resolved.
+   - The orchestrator relays CI failure information to the project owner.
+4. **If the failure cannot be resolved:** Do **NOT** merge the PR. Notify the orchestrator and project owner immediately and pause all dependent work until the issue is resolved.
 
 Violating this process (e.g., merging with red CI, ignoring failures, or failing to escalate) is treated as a **moderate feedback event** per § Feedback System.
+
+### Cross-PR CI Failures
+
+When parallel PRs in the same wave modify shared files (e.g., `config.py`, `middleware.py`), CI failures are expected on initial push because each branch runs CI against the base branch without sibling PR changes. This is a known pattern:
+
+1. **PR A** adds a new field to a shared model.
+2. **PR B** (on a parallel branch) references that field in middleware.
+3. **PR B's CI fails** because PR A hasn't merged yet — the field doesn't exist on the base branch.
+
+**Mitigation:**
+- Identify cross-PR dependencies during wave planning (see § Cross-PR Dependency Sequencing) and document them in PR descriptions.
+- When CI fails due to a known cross-PR dependency, the engineer must note this in the PR and wait for the dependency to merge before rebasing and re-running CI.
+- **Do not merge a PR whose CI only passed after a rebase without verifying the rebase CI run also passes.** The green checkmark must be on the final commit, not an earlier one.
+- Engineers must still **notify the orchestrator** of all CI failures, even expected ones from cross-PR deps, so the orchestrator can track and relay to the project owner.
 
 ## Commit Identity
 
@@ -559,14 +591,51 @@ When starting any work session, the orchestrating Claude instance should:
 
 1. Read this charter and all roster files in `.claude/team/roster/`
 2. Spawn the Manager agent first (with their personality from roster), using `team_name: "isnad-graph"`
-3. **The Manager plans and coordinates but CANNOT spawn agents.** Only the orchestrating Claude instance (team lead) has access to the Agent tool. The Manager must send spawn requests back to the team lead via SendMessage, including the full context for each agent to be spawned.
-4. The team lead spawns all agents directly using the Agent tool — **all agents MUST use `team_name: "isnad-graph"`**
+3. **The Manager plans and coordinates but CANNOT spawn agents.** Only the orchestrating Claude instance (team lead) has access to the Agent tool. The Manager must **write their execution plan to a file** (e.g., `/tmp/wave-plan.md`) so the orchestrator can read it.
+4. The team lead reads the plan file and spawns all agents directly using the Agent tool — **all agents MUST use `team_name: "isnad-graph"`**
 5. All code-writing agents use `isolation: "worktree"`
-6. Coordinate via named agents and SendMessage
+6. Coordinate via named agents and SendMessage (between spawned agents only — not back to orchestrator)
 
 > **Team name:** Every Agent tool call in this repo MUST include `team_name: "isnad-graph"`. This registers agents in Claude Code's team system, enabling the tree-view status line and inter-agent coordination.
 
-> **Agent tool limitation:** Spawned agents (including the Manager, leads, and engineers) do NOT have access to the Agent tool. They cannot spawn other agents. All agent spawning must be done by the orchestrating Claude instance. Spawned agents should use SendMessage to request new agents be created, providing the full context needed for the new agent's prompt.
+> **Agent tool limitation:** Spawned agents (including the Manager, leads, and engineers) do NOT have access to the Agent tool. They cannot spawn other agents. All agent spawning must be done by the orchestrating Claude instance.
+
+> **Communication limitation:** Spawned agents **cannot SendMessage to the orchestrator**. The orchestrator can send messages TO spawned agents, and spawned agents can send messages TO each other, but the return path to the orchestrator does not exist. For planning agents (e.g., Manager creating an execution plan), write output to a file (e.g., `/tmp/wave-plan.md`) instead of trying to SendMessage back. The orchestrator will read the file after the agent goes idle.
+
+### Agent Completion Signaling
+
+Spawned agents cannot notify the orchestrator when they finish work. Without a signaling mechanism, agents complete their tasks, go idle, and the orchestrator does not know — requiring manual user intervention to advance the workflow.
+
+**Every spawned agent must append a status entry to `/tmp/wave-status.json` upon completing all assigned work:**
+
+```bash
+echo '{"agent": "<agent-name>", "phase": "<impl|review|done>", "summary": "<one-line>", "pr": "<PR-URL-or-N/A>", "tech_debt_filed": <true|false>}' >> /tmp/wave-status.json
+```
+
+All agents write to the **same file** so the orchestrator has a single artifact to poll. The orchestrator must include this instruction in every spawn prompt.
+
+**The orchestrator must poll `/tmp/wave-status.json` after spawning agents:**
+
+```bash
+cat /tmp/wave-status.json 2>/dev/null
+```
+
+When all expected agents have reported, the orchestrator proceeds to the next step (nudge reviewers, merge PRs, spawn next layer, etc.) **without waiting for the user to flag idleness**.
+
+**Orchestrator polling cadence:** After spawning agents, the orchestrator should check `/tmp/wave-status.json` periodically rather than waiting indefinitely. If agents are idle and no status entries appear after a reasonable period, the orchestrator should investigate (check PR state, git log, etc.) and nudge or re-spawn as needed.
+
+### Pre-Wave Engineer Checklist
+
+Before implementation starts, each engineer's spawn prompt must include this explicit checklist of post-merge responsibilities:
+
+1. **Implementation** — fix the assigned issues on the correct branch
+2. **CI verification** — wait for CI, report ANY failures to orchestrator (even expected cross-PR ones)
+3. **Peer review** — notify designated reviewer; review your assigned peer's PR
+4. **Merge** — merge approved PR into deployments branch
+5. **Tech-debt filing** — create a GitHub issue for every non-blocking review comment not quick-fixed (hard gate: PR not "done" until filed)
+6. **Completion signal** — append status to `/tmp/wave-status.json`
+
+This checklist must be included verbatim in every engineer spawn prompt. No exceptions.
 
 ### Team Lifecycle (TeamCreate / TeamDelete)
 
@@ -594,15 +663,32 @@ The standard priority order for every wave is:
 
 All open bugs must be addressed before starting new feature work. If a phase has outstanding bugs, Wave 1 addresses them; new features start in Wave 2 or later.
 
+### Critical-Severity Isolation Rule
+
+**Critical-severity issues always get a dedicated PR and merge first.** They must never be bundled with lower-severity issues. The critical PR is the first in the merge sequence regardless of review readiness of other PRs. This ensures the highest-risk fix is reviewed, merged, and deployed with minimal coupling to other changes.
+
+### Dependency Analysis (Required Planning Step)
+
+Before assigning issues to engineers, the orchestrator (or Manager) must produce a **dependency map** identifying cross-PR shared state:
+
+1. **Scan all issues in the wave** for shared files — config, middleware, models, shared utilities.
+2. **Flag issues that introduce new fields, settings, or imports** that other issues' code will depend on.
+3. **Define merge order** based on dependencies — the PR that introduces the shared state merges first.
+4. **Document dependencies in each PR description**: "Depends on PR #N (must merge first)."
+
+This step is mandatory for waves where multiple engineers touch overlapping files. Skipping it leads to cascading CI failures from cross-PR dependencies.
+
 ### Wave Retrospectives
 
 Before every new wave, run a retrospective:
 
-1. Manager spawns retro conversations with each team lead.
-2. Each lead discusses with their reports: what went well, what didn't, what to improve.
-3. Manager consolidates into a single retro document persisted to `feedback/retro-phase{N}-wave{M}.md`.
+1. Manager is spawned to write the retro document to `feedback/retro-phase{N}-wave{M}.md`.
+2. The retro covers: what went well, what didn't, team member perspectives, and proposed process changes.
+3. **The orchestrator must poll for the retro output file** after spawning the Manager — the same completion signaling rule applies here. Do not wait for the user to flag that the Manager is idle. Check for the file at `feedback/retro-phase{N}-wave{M}.md` and read it as soon as it appears.
 4. **Present proposed process changes to the user and explicitly ask which to adopt.** Do NOT assume all are adopted.
 5. Only after user approval does the wave's implementation start.
+
+> **Retro polling is not optional.** The orchestrator failed to poll for the Wave 3 retro output and required user intervention. This is the same completion signaling gap that affects all spawned agents. The retro file path is known in advance — there is no excuse for not checking it.
 
 ### Knowledge Transfer for Cross-Specialty Reassignment
 
