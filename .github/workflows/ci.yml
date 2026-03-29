@@ -69,6 +69,8 @@ jobs:
           restore-keys: uv-${{ runner.os }}-
       - run: uv sync --group ml
       - run: uv run pytest tests/ -v --tb=short -x -m "not integration and not e2e" --cov=src --cov-report=xml --cov-report=term --cov-fail-under=70
+        env:
+          ENVIRONMENT: test
       - uses: actions/upload-artifact@v7
         if: always()
         with:
