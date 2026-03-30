@@ -47,14 +47,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = self._cfg.x_frame_options
-        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["X-XSS-Protection"] = self._cfg.x_xss_protection
         hsts = f"max-age={self._cfg.hsts_max_age}"
         if self._cfg.hsts_include_subdomains:
             hsts += "; includeSubDomains"
+        if self._cfg.hsts_preload:
+            hsts += "; preload"
         response.headers["Strict-Transport-Security"] = hsts
         response.headers["Content-Security-Policy"] = self._cfg.content_security_policy
         response.headers["Referrer-Policy"] = self._cfg.referrer_policy
         response.headers["Permissions-Policy"] = self._cfg.permissions_policy
+        response.headers["Cross-Origin-Opener-Policy"] = self._cfg.cross_origin_opener_policy
+        response.headers["Cross-Origin-Resource-Policy"] = self._cfg.cross_origin_resource_policy
         return response
 
 

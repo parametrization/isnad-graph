@@ -66,12 +66,18 @@ class AuthSettings(BaseSettings):
 class SecurityHeaderSettings(BaseSettings):
     """Configurable security headers. Production defaults; override for dev."""
 
-    content_security_policy: str = "default-src 'self'"
+    content_security_policy: str = "default-src 'self'; frame-ancestors 'none'"
     hsts_max_age: int = 63072000
     hsts_include_subdomains: bool = True
+    hsts_preload: bool = True
     x_frame_options: str = "DENY"
+    x_xss_protection: str = "0"
     referrer_policy: str = "strict-origin-when-cross-origin"
-    permissions_policy: str = "camera=(), microphone=(), geolocation=()"
+    permissions_policy: str = (
+        "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    )
+    cross_origin_opener_policy: str = "same-origin"
+    cross_origin_resource_policy: str = "same-origin"
 
     model_config = SettingsConfigDict(env_prefix="SECURITY_")
 
