@@ -84,9 +84,13 @@ def _load_narrators(
     curated_dir: Path,
     *,
     strict: bool = True,
+    skip_files: list[str] | None = None,
 ) -> LoadResult:
     """Load Narrator nodes from narrators_canonical.parquet."""
     path = staging_dir / "narrators_canonical.parquet"
+    if _should_skip_file(path, staging_dir, skip_files):
+        logger.info("narrators_skipped_incremental")
+        return LoadResult("Narrator", 0, 0, 0)
     if not path.exists():
         if strict:
             msg = f"Missing required file: {path}"
@@ -160,9 +164,10 @@ def _load_hadiths(
     staging_dir: Path,
     *,
     strict: bool = True,
+    skip_files: list[str] | None = None,
 ) -> LoadResult:
     """Load Hadith nodes from hadiths_*.parquet files."""
-    files = _parquet_files(staging_dir, "hadiths_")
+    files = _filter_parquet_files(_parquet_files(staging_dir, "hadiths_"), staging_dir, skip_files)
     if not files:
         if strict:
             msg = f"No hadiths_*.parquet files in {staging_dir}"
@@ -238,9 +243,12 @@ def _load_collections(
     staging_dir: Path,
     *,
     strict: bool = True,
+    skip_files: list[str] | None = None,
 ) -> LoadResult:
     """Load Collection nodes from collections_*.parquet files."""
-    files = _parquet_files(staging_dir, "collections_")
+    files = _filter_parquet_files(
+        _parquet_files(staging_dir, "collections_"), staging_dir, skip_files
+    )
     if not files:
         if strict:
             msg = f"No collections_*.parquet files in {staging_dir}"
@@ -314,6 +322,7 @@ def _load_chains(
     staging_dir: Path,
     *,
     strict: bool = True,
+    skip_files: list[str] | None = None,
 ) -> LoadResult:
     """Load Chain nodes from narrator_mentions resolved data.
 
@@ -322,7 +331,9 @@ def _load_chains(
     wave-1 we create placeholder chains with metadata derived from the
     mentions themselves; full chain enrichment happens in Phase 4.
     """
-    files = _parquet_files(staging_dir, "narrator_mentions_")
+    files = _filter_parquet_files(
+        _parquet_files(staging_dir, "narrator_mentions_"), staging_dir, skip_files
+    )
     if not files:
         if strict:
             msg = f"No narrator_mentions_*.parquet files in {staging_dir}"
@@ -391,6 +402,7 @@ def _load_gradings(
     staging_dir: Path,
     *,
     strict: bool = True,
+    skip_files: list[str] | None = None,
 ) -> LoadResult:
     """Load Grading nodes from hadith staging data.
 
@@ -398,7 +410,7 @@ def _load_gradings(
     Each hadith with a non-null grade produces a single Grading node
     attributed to the collection compiler.
     """
-    files = _parquet_files(staging_dir, "hadiths_")
+    files = _filter_parquet_files(_parquet_files(staging_dir, "hadiths_"), staging_dir, skip_files)
     if not files:
         if strict:
             msg = f"No hadiths_*.parquet files for grading extraction in {staging_dir}"
@@ -582,27 +594,56 @@ def _load_locations(
 # ---------------------------------------------------------------------------
 
 
+def _should_skip_file(path: Path, staging_dir: Path, skip_files: list[str] | None) -> bool:
+    """Check if a file should be skipped based on the skip_files list."""
+    if not skip_files:
+        return False
+    # Build a key like "staging/hadiths_bukhari.parquet"
+    try:
+        rel = path.relative_to(staging_dir.parent)
+        return str(rel) in skip_files
+    except ValueError:
+        return False
+
+
+def _filter_parquet_files(
+    files: list[Path], staging_dir: Path, skip_files: list[str] | None
+) -> list[Path]:
+    """Filter out files that are in the skip_files list."""
+    if not skip_files:
+        return files
+    return [f for f in files if not _should_skip_file(f, staging_dir, skip_files)]
+
+
 def load_all_nodes(
     client: Neo4jClient,
     staging_dir: Path,
     curated_dir: Path,
     *,
     strict: bool = True,
+    skip_files: list[str] | None = None,
 ) -> list[LoadResult]:
     """Load all node types into Neo4j.
 
     Ensures uniqueness constraints first, then loads each node type
     in dependency order (narrators before chains, hadiths before gradings).
+
+    Parameters
+    ----------
+    skip_files:
+        Manifest keys of files to skip (for incremental loading).
     """
     client.ensure_constraints()
     client.ensure_fulltext_indexes()
 
     results: list[LoadResult] = []
-    results.append(_load_narrators(client, staging_dir, curated_dir, strict=strict))
-    results.append(_load_hadiths(client, staging_dir, strict=strict))
-    results.append(_load_collections(client, staging_dir, strict=strict))
-    results.append(_load_chains(client, staging_dir, strict=strict))
-    results.append(_load_gradings(client, staging_dir, strict=strict))
+    results.append(
+        _load_narrators(client, staging_dir, curated_dir, strict=strict, skip_files=skip_files)
+    )
+    results.append(_load_hadiths(client, staging_dir, strict=strict, skip_files=skip_files))
+    results.append(_load_collections(client, staging_dir, strict=strict, skip_files=skip_files))
+    results.append(_load_chains(client, staging_dir, strict=strict, skip_files=skip_files))
+    results.append(_load_gradings(client, staging_dir, strict=strict, skip_files=skip_files))
     results.append(_load_historical_events(client, curated_dir, strict=strict))
     results.append(_load_locations(client, curated_dir, strict=strict))
 
