@@ -66,7 +66,11 @@ def _drop_graph(client: Neo4jClient) -> None:
         log.warning("gds_graph_drop_failed", error=str(exc))
 
 
-def run_metrics(client: Neo4jClient) -> MetricsResult:
+def run_metrics(
+    client: Neo4jClient,
+    *,
+    affected_corpora: set[str] | None = None,
+) -> MetricsResult:
     """Compute graph metrics and write back to NARRATOR nodes."""
     if not _gds_available(client):
         return MetricsResult(

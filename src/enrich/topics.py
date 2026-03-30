@@ -84,7 +84,12 @@ def _write_topics(
     )
 
 
-def run_topics(client: Neo4jClient, labels: list[str] | None = None) -> TopicResult:
+def run_topics(
+    client: Neo4jClient,
+    labels: list[str] | None = None,
+    *,
+    affected_corpora: set[str] | None = None,
+) -> TopicResult:
     """Classify hadiths and write top-3 topics to HADITH nodes.
 
     Parameters
