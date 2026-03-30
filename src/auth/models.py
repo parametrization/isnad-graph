@@ -3,8 +3,26 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
+
+
+class Role(StrEnum):
+    """User roles with hierarchical privilege levels."""
+
+    VIEWER = "viewer"
+    EDITOR = "editor"
+    MODERATOR = "moderator"
+    ADMIN = "admin"
+
+
+ROLE_HIERARCHY: dict[Role, int] = {
+    Role.VIEWER: 0,
+    Role.EDITOR: 1,
+    Role.MODERATOR: 2,
+    Role.ADMIN: 3,
+}
 
 
 class User(BaseModel):
@@ -19,6 +37,7 @@ class User(BaseModel):
     provider_user_id: str
     created_at: datetime
     is_admin: bool = False
+    role: str | None = None
 
 
 class TokenResponse(BaseModel):
@@ -38,11 +57,3 @@ class AuthorizationUrlResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     authorization_url: str
-
-
-class RefreshRequest(BaseModel):
-    """Refresh token request body."""
-
-    model_config = ConfigDict(frozen=True)
-
-    refresh_token: str

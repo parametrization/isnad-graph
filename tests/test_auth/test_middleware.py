@@ -75,27 +75,25 @@ class TestAuthMeEndpoint:
 class TestRefreshEndpoint:
     def test_refresh_returns_new_tokens(self, client: TestClient) -> None:
         refresh = create_refresh_token("my-user-id")
-        resp = client.post(
-            "/api/v1/auth/refresh",
-            json={"refresh_token": refresh},
-        )
+        client.cookies.set("refresh_token", refresh)
+        resp = client.post("/api/v1/auth/refresh")
         assert resp.status_code == 200
         data = resp.json()
         assert "access_token" in data
         assert "refresh_token" in data
         assert data["token_type"] == "bearer"
 
+    def test_refresh_missing_cookie(self, client: TestClient) -> None:
+        resp = client.post("/api/v1/auth/refresh")
+        assert resp.status_code == 401
+
     def test_refresh_with_invalid_token(self, client: TestClient) -> None:
-        resp = client.post(
-            "/api/v1/auth/refresh",
-            json={"refresh_token": "garbage"},
-        )
+        client.cookies.set("refresh_token", "garbage")
+        resp = client.post("/api/v1/auth/refresh")
         assert resp.status_code == 401
 
     def test_refresh_with_access_token_rejected(self, client: TestClient) -> None:
         access = create_access_token("my-user-id")
-        resp = client.post(
-            "/api/v1/auth/refresh",
-            json={"refresh_token": access},
-        )
+        client.cookies.set("refresh_token", access)
+        resp = client.post("/api/v1/auth/refresh")
         assert resp.status_code == 401

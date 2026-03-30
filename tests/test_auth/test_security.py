@@ -90,17 +90,20 @@ class TestSecurityHeaders:
 
     def test_x_xss_protection(self, client: TestClient) -> None:
         resp = client.get("/health")
-        assert resp.headers.get("x-xss-protection") == "1; mode=block"
+        assert resp.headers.get("x-xss-protection") == "0"
 
     def test_strict_transport_security(self, client: TestClient) -> None:
         resp = client.get("/health")
         hsts = resp.headers.get("strict-transport-security", "")
         assert "max-age=" in hsts
         assert "includeSubDomains" in hsts
+        assert "preload" in hsts
 
     def test_content_security_policy(self, client: TestClient) -> None:
         resp = client.get("/health")
-        assert resp.headers.get("content-security-policy") == "default-src 'self'"
+        csp = resp.headers.get("content-security-policy", "")
+        assert "default-src 'self'" in csp
+        assert "frame-ancestors 'none'" in csp
 
     def test_referrer_policy(self, client: TestClient) -> None:
         resp = client.get("/health")
@@ -108,13 +111,96 @@ class TestSecurityHeaders:
 
     def test_permissions_policy(self, client: TestClient) -> None:
         resp = client.get("/health")
-        assert "camera=()" in resp.headers.get("permissions-policy", "")
+        pp = resp.headers.get("permissions-policy", "")
+        assert "camera=()" in pp
+        assert "microphone=()" in pp
+        assert "geolocation=()" in pp
+        assert "payment=()" in pp
+
+    def test_cross_origin_opener_policy(self, client: TestClient) -> None:
+        resp = client.get("/health")
+        assert resp.headers.get("cross-origin-opener-policy") == "same-origin"
+
+    def test_cross_origin_resource_policy(self, client: TestClient) -> None:
+        resp = client.get("/health")
+        assert resp.headers.get("cross-origin-resource-policy") == "same-origin"
 
     def test_headers_on_api_endpoint(self, client: TestClient) -> None:
         """Security headers should be present on API routes too."""
         resp = client.get("/api/v1/narrators")
         assert resp.headers.get("x-content-type-options") == "nosniff"
         assert resp.headers.get("x-frame-options") == "DENY"
+        assert resp.headers.get("cross-origin-opener-policy") == "same-origin"
+
+
+# --- CORS Configuration ---
+
+
+class TestCORSConfiguration:
+    """Verify CORS middleware is configured securely."""
+
+    def test_allowed_origin_reflected(self, client: TestClient) -> None:
+        """Allowed origin gets reflected in Access-Control-Allow-Origin."""
+        resp = client.options(
+            "/health",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert resp.headers.get("access-control-allow-origin") == "http://localhost:3000"
+
+    def test_disallowed_origin_rejected(self, client: TestClient) -> None:
+        """Disallowed origin does not get an Access-Control-Allow-Origin header."""
+        resp = client.options(
+            "/health",
+            headers={
+                "Origin": "https://evil.example.com",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert resp.headers.get("access-control-allow-origin") is None
+
+    def test_credentials_allowed(self, client: TestClient) -> None:
+        """Access-Control-Allow-Credentials is true for allowed origins."""
+        resp = client.options(
+            "/health",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert resp.headers.get("access-control-allow-credentials") == "true"
+
+    def test_no_wildcard_origin(self, client: TestClient) -> None:
+        """CORS must never reflect a wildcard origin."""
+        resp = client.get("/health", headers={"Origin": "http://localhost:3000"})
+        assert resp.headers.get("access-control-allow-origin") != "*"
+
+    def test_patch_method_allowed(self, client: TestClient) -> None:
+        """PATCH method should be allowed for admin endpoints."""
+        resp = client.options(
+            "/health",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "PATCH",
+            },
+        )
+        allowed = resp.headers.get("access-control-allow-methods", "")
+        assert "PATCH" in allowed
+
+    def test_explicit_allow_headers(self, client: TestClient) -> None:
+        """Allow-Headers should list specific headers, not wildcard."""
+        resp = client.options(
+            "/health",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "GET",
+                "Access-Control-Request-Headers": "Authorization",
+            },
+        )
+        allowed = resp.headers.get("access-control-allow-headers", "")
+        assert "authorization" in allowed.lower()
 
 
 # --- Rate Limiting ---

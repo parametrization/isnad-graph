@@ -34,6 +34,24 @@ repos:
       - id: gitleaks
         name: gitleaks
 
+  # --- Branch & commit identity checks ---
+  - repo: local
+    hooks:
+      - id: branch-ownership
+        name: branch-ownership
+        entry: .githooks/pre-commit
+        language: script
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: co-authored-by-trailers
+        name: co-authored-by-trailers
+        entry: .githooks/commit-msg
+        language: script
+        pass_filenames: true
+        stages: [commit-msg]
+
   # --- Local hooks (pip-audit, mypy, tests) ---
   - repo: local
     hooks:
@@ -54,14 +72,10 @@ repos:
 
       - id: pytest-unit
         name: pytest-unit
-        entry: uv run pytest tests/ -x --tb=short -q -m "not integration and not e2e"
+        entry: bash -c 'ENVIRONMENT=test uv run pytest tests/ -x --tb=short -q -m "not integration and not e2e"'
         language: system
         pass_filenames: false
         stages: [pre-commit]
 
-      - id: pytest-integration
-        name: pytest-integration
-        entry: uv run pytest tests/integration/ -x --tb=short -q -m integration
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
+      # Integration tests require Docker (Neo4j, PostgreSQL) — run in CI only.
+      # To run locally: make infra && ENVIRONMENT=test uv run pytest tests/integration/ -m integration
