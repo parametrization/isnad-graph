@@ -77,9 +77,5 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
-      - id: pytest-integration
-        name: pytest-integration
-        entry: bash -c 'ENVIRONMENT=test uv run pytest tests/integration/ -x --tb=short -q -m integration'
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
+      # Integration tests require Docker (Neo4j, PostgreSQL) — run in CI only.
+      # To run locally: make infra && ENVIRONMENT=test uv run pytest tests/integration/ -m integration
