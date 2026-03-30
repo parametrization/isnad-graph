@@ -113,7 +113,11 @@ def _log_distribution(
     )
 
 
-def run_historical_overlay(client: Neo4jClient) -> HistoricalResult:
+def run_historical_overlay(
+    client: Neo4jClient,
+    *,
+    affected_corpora: set[str] | None = None,
+) -> HistoricalResult:
     """Create ACTIVE_DURING edges between narrators/compilers and historical events.
 
     For each narrator-event pair, checks whether the narrator's active period

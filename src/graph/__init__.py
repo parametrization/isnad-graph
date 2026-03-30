@@ -46,6 +46,7 @@ def load_all(
     strict: bool = True,
     skip_validation: bool = False,
     nodes_only: bool = False,
+    skip_files: list[str] | None = None,
 ) -> LoadSummary:
     """Full graph loading pipeline: nodes -> edges -> validate.
 
@@ -65,13 +66,18 @@ def load_all(
         If ``True``, skip validation queries after loading.
     nodes_only:
         If ``True``, load only nodes (skip edges and validation).
+    skip_files:
+        List of manifest keys (e.g. ``staging/hadiths_bukhari.parquet``) to skip
+        during incremental loading. Files not in this list are loaded normally.
     """
     logger.info(
         "load_all_start", strict=strict, skip_validation=skip_validation, nodes_only=nodes_only
     )
 
     # 1. Load nodes
-    node_results = load_all_nodes(client, staging_dir, curated_dir, strict=strict)
+    node_results = load_all_nodes(
+        client, staging_dir, curated_dir, strict=strict, skip_files=skip_files
+    )
     total_nodes = sum(r.created + r.merged for r in node_results)
     logger.info("load_all_nodes_done", total_nodes=total_nodes)
 

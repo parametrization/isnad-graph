@@ -36,6 +36,7 @@ def run_all(
     *,
     only: list[str] | None = None,
     skip: list[str] | None = None,
+    affected_corpora: set[str] | None = None,
 ) -> EnrichSummary:
     """Run enrichment pipeline: metrics -> topics -> historical.
 
@@ -45,6 +46,9 @@ def run_all(
         If provided, run only these steps.
     skip:
         If provided, skip these steps. Ignored if *only* is set.
+    affected_corpora:
+        If provided (incremental mode), only process data from these corpora.
+        Passed through to individual enrichment steps for filtering.
     """
     steps_completed: list[str] = []
     steps_failed: list[str] = []
@@ -56,7 +60,7 @@ def run_all(
     if _should_run("metrics", only, skip):
         try:
             log.info("enrich_step_start", step="metrics")
-            metrics_result = run_metrics(client)
+            metrics_result = run_metrics(client, affected_corpora=affected_corpora)
             steps_completed.append("metrics")
             log.info("enrich_step_done", step="metrics")
         except Exception:
@@ -67,7 +71,7 @@ def run_all(
     if _should_run("topics", only, skip):
         try:
             log.info("enrich_step_start", step="topics")
-            topics_result = run_topics(client)
+            topics_result = run_topics(client, affected_corpora=affected_corpora)
             steps_completed.append("topics")
             log.info("enrich_step_done", step="topics")
         except Exception:
@@ -78,7 +82,7 @@ def run_all(
     if _should_run("historical", only, skip):
         try:
             log.info("enrich_step_start", step="historical")
-            historical_result = run_historical_overlay(client)
+            historical_result = run_historical_overlay(client, affected_corpora=affected_corpora)
             steps_completed.append("historical")
             log.info("enrich_step_done", step="historical")
         except Exception:

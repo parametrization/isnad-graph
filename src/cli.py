@@ -121,8 +121,11 @@ def _cmd_resolve() -> None:
     print(f"\nResolution complete. {total} output files.")
 
 
-def _cmd_load(*, skip_validation: bool = False, nodes_only: bool = False) -> None:
+def _cmd_load(
+    *, skip_validation: bool = False, nodes_only: bool = False, incremental: bool = False
+) -> None:
     """Run the Phase 3 graph loading pipeline."""
+    import time
     from pathlib import Path
 
     from src.config import get_settings
@@ -132,11 +135,48 @@ def _cmd_load(*, skip_validation: bool = False, nodes_only: bool = False) -> Non
     _check_neo4j()
 
     from src.graph import load_all
+    from src.pipeline.audit import create_audit_entry, write_audit_entry
+    from src.pipeline.manifest import (
+        LAST_LOADED_MANIFEST_FILENAME,
+        MANIFEST_FILENAME,
+        compare_manifests,
+        generate_manifest,
+        load_manifest,
+        save_manifest,
+    )
     from src.utils.neo4j_client import Neo4jClient
 
     staging_dir = Path(settings.data_staging_dir)
     curated_dir = Path(settings.data_curated_dir)
+    data_dir = staging_dir.parent
     queries_dir = Path("queries")
+
+    start = time.monotonic()
+
+    # Generate current manifest
+    current_manifest = generate_manifest(data_dir)
+    save_manifest(current_manifest, data_dir / MANIFEST_FILENAME)
+
+    skipped_files: list[str] = []
+    changed_file_details: list[dict[str, str]] = []
+
+    if incremental:
+        previous_manifest = load_manifest(data_dir / LAST_LOADED_MANIFEST_FILENAME)
+        diff = compare_manifests(current_manifest, previous_manifest)
+        if not diff.has_changes:
+            print("No changes detected. Skipping incremental load.")
+            return
+        print(
+            f"Incremental load: {len(diff.changed_files)} changed, "
+            f"{len(diff.unchanged)} unchanged, {len(diff.removed)} removed."
+        )
+        skipped_files = diff.unchanged
+
+        for f in diff.changed_files:
+            entry: dict[str, str] = {"file": f, "md5_after": current_manifest[f]["md5"]}
+            if f in previous_manifest:
+                entry["md5_before"] = previous_manifest[f]["md5"]
+            changed_file_details.append(entry)
 
     with Neo4jClient() as client:
         summary = load_all(
@@ -147,11 +187,34 @@ def _cmd_load(*, skip_validation: bool = False, nodes_only: bool = False) -> Non
             strict=False,
             skip_validation=skip_validation,
             nodes_only=nodes_only,
+            skip_files=skipped_files if incremental else None,
         )
+
+    duration = time.monotonic() - start
+
+    # Update last-loaded manifest on success
+    save_manifest(current_manifest, data_dir / LAST_LOADED_MANIFEST_FILENAME)
+
+    # Write audit entry
+    audit = create_audit_entry(
+        "load",
+        duration_seconds=round(duration, 2),
+        files_changed=changed_file_details,
+        rows_affected=summary.total_nodes + summary.total_edges,
+        summary={
+            "total_nodes": summary.total_nodes,
+            "total_edges": summary.total_edges,
+            "incremental": incremental,
+            "files_skipped": len(skipped_files),
+        },
+    )
+    write_audit_entry(data_dir, audit)
 
     print("\n=== Load Summary ===")
     print(f"  Nodes loaded : {summary.total_nodes}")
     print(f"  Edges loaded : {summary.total_edges}")
+    if incremental:
+        print(f"  Files skipped: {len(skipped_files)}")
 
     for nr in summary.node_results:
         print(f"    {nr.node_type}: created={nr.created} merged={nr.merged} skipped={nr.skipped}")
@@ -210,21 +273,84 @@ def _cmd_enrich(
     *,
     only: list[str] | None = None,
     skip: list[str] | None = None,
+    incremental: bool = False,
 ) -> None:
     """Run the Phase 4 enrichment pipeline."""
+    import time
     from pathlib import Path
 
     from src.config import get_settings
     from src.enrich import run_all as enrich_all
+    from src.pipeline.audit import create_audit_entry, write_audit_entry
+    from src.pipeline.manifest import (
+        LAST_LOADED_MANIFEST_FILENAME,
+        MANIFEST_FILENAME,
+        compare_manifests,
+        generate_manifest,
+        load_manifest,
+    )
     from src.utils.neo4j_client import Neo4jClient
 
     settings = get_settings()
     _check_neo4j()
 
     staging_dir = Path(settings.data_staging_dir)
+    data_dir = staging_dir.parent
+    start = time.monotonic()
+
+    affected_corpora: set[str] | None = None
+    changed_file_details: list[dict[str, str]] = []
+
+    if incremental:
+        current_manifest = generate_manifest(data_dir)
+        previous_manifest = load_manifest(data_dir / LAST_LOADED_MANIFEST_FILENAME)
+        if not previous_manifest:
+            previous_manifest = load_manifest(data_dir / MANIFEST_FILENAME)
+        diff = compare_manifests(current_manifest, previous_manifest)
+        if not diff.has_changes:
+            print("No changes detected. Skipping incremental enrich.")
+            return
+
+        # Determine which corpora are affected by changed files
+        affected_corpora = set()
+        for f in diff.changed_files:
+            # Extract corpus from filename like "staging/hadiths_bukhari.parquet"
+            basename = f.rsplit("/", 1)[-1]
+            # Strip prefix (hadiths_, narrators_, etc.) and .parquet suffix
+            parts = basename.replace(".parquet", "").split("_", 1)
+            if len(parts) > 1:
+                affected_corpora.add(parts[1])
+
+            entry: dict[str, str] = {"file": f, "md5_after": current_manifest[f]["md5"]}
+            if f in previous_manifest:
+                entry["md5_before"] = previous_manifest[f]["md5"]
+            changed_file_details.append(entry)
+
+        print(
+            f"Incremental enrich: {len(diff.changed_files)} files changed, "
+            f"affected corpora: {', '.join(sorted(affected_corpora)) or 'none'}"
+        )
 
     with Neo4jClient() as client:
-        summary = enrich_all(client, staging_dir, only=only, skip=skip)
+        summary = enrich_all(
+            client, staging_dir, only=only, skip=skip, affected_corpora=affected_corpora
+        )
+
+    duration = time.monotonic() - start
+
+    # Write audit entry
+    audit = create_audit_entry(
+        "enrich",
+        duration_seconds=round(duration, 2),
+        files_changed=changed_file_details,
+        summary={
+            "steps_completed": summary.steps_completed,
+            "steps_failed": summary.steps_failed,
+            "incremental": incremental,
+            "affected_corpora": sorted(affected_corpora) if affected_corpora else [],
+        },
+    )
+    write_audit_entry(data_dir, audit)
 
     print("\n=== Enrich Summary ===")
     print(f"  Steps completed: {', '.join(summary.steps_completed) or 'none'}")
@@ -250,6 +376,35 @@ def _cmd_enrich(
         sys.exit(1)
 
 
+def _cmd_audit(*, last_n: int = 10) -> None:
+    """Display recent pipeline audit entries."""
+    from pathlib import Path
+
+    from src.config import get_settings
+    from src.pipeline.audit import list_recent_entries
+
+    settings = get_settings()
+    data_dir = Path(settings.data_staging_dir).parent
+
+    entries = list_recent_entries(data_dir, last_n=last_n)
+    if not entries:
+        print("No audit entries found.")
+        return
+
+    print(f"=== Last {len(entries)} Audit Entries ===\n")
+    for entry in entries:
+        print(f"  [{entry.stage}] {entry.timestamp}")
+        print(f"    Duration: {entry.duration_seconds}s | Operator: {entry.operator}")
+        if entry.files_changed:
+            print(f"    Files changed: {len(entry.files_changed)}")
+        if entry.rows_affected:
+            print(f"    Rows affected: {entry.rows_affected}")
+        if entry.summary:
+            for k, v in entry.summary.items():
+                print(f"    {k}: {v}")
+        print()
+
+
 def _cmd_stub(name: str) -> None:
     """Print a not-yet-implemented message for a pipeline stage."""
     print(f"Command '{name}' not yet implemented. See Makefile targets.")
@@ -271,6 +426,11 @@ def main() -> None:
     load_parser.add_argument(
         "--nodes-only", action="store_true", help="Load only nodes (skip edges and validation)"
     )
+    load_parser.add_argument(
+        "--incremental",
+        action="store_true",
+        help="Only load Parquet files whose hash changed since last load",
+    )
     enrich_parser = subparsers.add_parser("enrich", help="Compute metrics and enrichment")
     enrich_parser.add_argument(
         "--only",
@@ -284,7 +444,19 @@ def main() -> None:
         choices=["metrics", "topics", "historical"],
         help="Skip these enrichment steps",
     )
+    enrich_parser.add_argument(
+        "--incremental",
+        action="store_true",
+        help="Only re-enrich data affected by changed Parquet files",
+    )
     subparsers.add_parser("validate", help="Run graph validation queries")
+    audit_parser = subparsers.add_parser("audit", help="View recent pipeline audit entries")
+    audit_parser.add_argument(
+        "--last",
+        type=int,
+        default=10,
+        help="Number of recent audit entries to display (default: 10)",
+    )
     vs_parser = subparsers.add_parser("validate-staging", help="Validate staging Parquet files")
     vs_parser.add_argument(
         "--strict",
@@ -340,9 +512,12 @@ def main() -> None:
         _cmd_load(
             skip_validation=args.skip_validation,
             nodes_only=args.nodes_only,
+            incremental=args.incremental,
         )
     elif args.command == "enrich":
-        _cmd_enrich(only=args.only, skip=args.skip)
+        _cmd_enrich(only=args.only, skip=args.skip, incremental=args.incremental)
+    elif args.command == "audit":
+        _cmd_audit(last_n=args.last)
     elif args.command == "validate":
         _cmd_validate()
     else:
