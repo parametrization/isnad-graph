@@ -14,6 +14,7 @@ interface AuthContextValue {
   loading: boolean
   isAdmin: boolean
   logout: () => void
+  signOut: () => Promise<void>
 }
 
 const API_BASE = '/api/v1'
@@ -108,11 +109,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser()
   }, [clearTokensAndRedirect])
 
+  const signOut = useCallback(async () => {
+    const token = localStorage.getItem('access_token')
+
+    // Call logout endpoint (best-effort — clear tokens regardless)
+    if (token) {
+      try {
+        await fetch(`${API_BASE}/auth/logout`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      } catch {
+        // Ignore network errors — we still clear local state
+      }
+    }
+
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    setUser(null)
+
+    window.location.href = '/login'
+  }, [])
+
   const value: AuthContextValue = {
     user,
     loading,
     isAdmin: user?.is_admin ?? false,
     logout,
+    signOut,
   }
 
   return createElement(AuthContext.Provider, { value }, children)
