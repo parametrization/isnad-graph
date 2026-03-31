@@ -48,8 +48,8 @@ class AuthSettings(BaseSettings):
 
     jwt_secret: str = "dev-secret-change-in-production"
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
-    refresh_token_expire_days: int = 7
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 30
     google_client_id: str = ""
     google_client_secret: str = ""
     apple_client_id: str = ""
@@ -59,6 +59,7 @@ class AuthSettings(BaseSettings):
     github_client_id: str = ""
     github_client_secret: str = ""
     oauth_redirect_base_url: str = "http://localhost:8000"
+    first_user_is_admin: bool = False
 
     model_config = SettingsConfigDict(env_prefix="AUTH_")
 
