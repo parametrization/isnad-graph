@@ -1,0 +1,25 @@
+name: Notify Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    # Only notify after CI passes (on push), or always on manual dispatch
+    steps:
+      - name: Trigger deploy repo
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DEPLOY_REPO_PAT }}
+          repository: noorinalabs/noorinalabs-deploy
+          event-type: deploy-isnad-graph
+          client-payload: >-
+            {
+              "repo": "isnad-graph",
+              "sha": "${{ github.sha }}",
+              "ref": "${{ github.ref_name }}",
+              "actor": "${{ github.actor }}"
+            }
