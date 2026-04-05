@@ -45,13 +45,13 @@ def list_collections(
     count_rows = neo4j.execute_read(
         "MATCH (c:Collection) RETURN count(c) AS total",
     )
-    total = count_rows[0]["total"] if count_rows else 0
+    total = count_rows[0].get("total", 0) if count_rows else 0
 
     rows = neo4j.execute_read(
         "MATCH (c:Collection) RETURN properties(c) AS props ORDER BY c.id SKIP $skip LIMIT $limit",
         {"skip": skip, "limit": limit},
     )
-    items = [_row_to_response(row["props"]) for row in rows]
+    items = [_row_to_response(row.get("props") or {}) for row in rows]
     return PaginatedResponse[CollectionResponse](items=items, total=total, page=page, limit=limit)
 
 
@@ -67,4 +67,4 @@ def get_collection(
     )
     if not rows:
         raise HTTPException(status_code=404, detail=f"Collection '{collection_id}' not found")
-    return _row_to_response(rows[0]["props"])
+    return _row_to_response(rows[0].get("props") or {})
