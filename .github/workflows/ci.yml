@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main, 'deployments/**']
   push:
-    branches: [main]
+    branches: [main, 'deployments/**']
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
