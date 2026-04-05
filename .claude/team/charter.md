@@ -628,6 +628,16 @@ The orchestrator is the **single point that can create agents**. Managers coordi
 3. **Orchestrator spawns engineers** on behalf of each Manager, routing results back via SendMessage.
 4. **Engineers report completion** to the orchestrator, who relays to the Manager or acts on the results.
 
+**Agent naming convention:** All spawned agents MUST be named `{repo-name}-{persona-firstname}` (e.g., `isnad-graph-fatima`, `design-system-hiro`, `deploy-tomasz`). The repo prefix identifies which repo's team the agent belongs to, enabling clear routing in multi-repo sessions. Use the short repo name (without the `noorinalabs-` prefix) for brevity:
+
+| Repo | Prefix |
+|------|--------|
+| `noorinalabs-isnad-graph` | `isnad-graph-` |
+| `noorinalabs-design-system` | `design-system-` |
+| `noorinalabs-deploy` | `deploy-` |
+| `noorinalabs-landing-page` | `landing-page-` |
+| `noorinalabs-main` (cross-repo) | `main-` |
+
 **Anti-pattern:** Giving a Manager a fat prompt that tries to do investigation + coding + PRs + reviews all inline. This bypasses the team structure and produces work without proper review gates.
 
 > **Completion reporting is mandatory:** Every spawned agent MUST send a final status message to the team lead via SendMessage before going idle. This message must include: (1) what was accomplished, (2) any issues or blockers, (3) what the team lead should do next. An agent that completes work but goes silent without reporting forces the orchestrator to reconstruct state manually, which wastes time and risks missed context.
