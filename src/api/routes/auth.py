@@ -26,6 +26,23 @@ log = structlog.get_logger(logger_name=__name__)
 router = APIRouter()
 
 
+@router.get("/auth/providers")
+def list_providers() -> list[str]:
+    """Return names of OAuth providers that have credentials configured."""
+    settings = get_settings().auth
+    credential_fields = {
+        "google": (settings.google_client_id, settings.google_client_secret),
+        "github": (settings.github_client_id, settings.github_client_secret),
+        "apple": (settings.apple_client_id, settings.apple_client_secret),
+        "facebook": (settings.facebook_client_id, settings.facebook_client_secret),
+    }
+    return [
+        name
+        for name, (client_id, client_secret) in credential_fields.items()
+        if client_id and client_secret
+    ]
+
+
 def _build_redirect_uri(provider: str) -> str:
     """Build the OAuth callback redirect URI from settings."""
     base = get_settings().auth.oauth_redirect_base_url.rstrip("/")
