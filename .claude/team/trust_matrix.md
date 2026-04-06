@@ -24,23 +24,28 @@ All team members maintain a trust score for every other team member they interac
 
 Rows = the team member rating. Columns = the team member being rated.
 
-*Note: Tariq and Mei-Lin archived after Phase 8 reorganization — removed from active matrix. Sable added Phase 12 (hired 2026-03-28).*
+*Note: Tariq and Mei-Lin archived after Phase 8 reorganization — removed from active matrix. Sable added Phase 12 (hired 2026-03-28). Phase 15 team reorganization: new repo-specific personas added (Nadia, Mateo, Ingrid, Jun-Seo, Linh).*
 
-| Rater ↓ \ Rated → | Fatima | Renaud | Sunita | Tomasz | Dmitri | Kwame | Amara | Hiro | Carolina | Yara | Priya | Elena | Sable |
-|--------------------|--------|--------|--------|--------|--------|-------|-------|------|----------|------|-------|-------|-------|
-| **Fatima**         | —      | 3      | 3      | 4      | 3      | 5     | 4     | 4    | 4        | 4    | 3     | 3     | 3     |
-| **Renaud**         | 3      | —      | 3      | 3      | 3      | 4     | 4     | 4    | 4        | 3    | 3     | 3     | 3     |
-| **Sunita**         | 3      | 3      | —      | 4      | 3      | 4     | 3     | 3    | 3        | 4    | 3     | 3     | 3     |
-| **Tomasz**         | 4      | 3      | 4      | —      | 3      | 3     | 3     | 3    | 3        | 4    | 3     | 3     | 3     |
-| **Dmitri**         | 3      | 3      | 3      | 3      | —      | 5     | 4     | 4    | 4        | 3    | 3     | 3     | 3     |
-| **Kwame**          | 4      | 3      | 3      | 4      | 4      | —     | 4     | 4    | 4        | 3    | 3     | 3     | 3     |
-| **Amara**          | 4      | 3      | 3      | 3      | 4      | 4     | —     | 4    | 4        | 3    | 3     | 3     | 3     |
-| **Hiro**           | 4      | 3      | 3      | 3      | 4      | 4     | 4     | —    | 4        | 3    | 3     | 3     | 3     |
-| **Carolina**       | 4      | 3      | 3      | 3      | 4      | 4     | 4     | 4    | —        | 3    | 3     | 3     | 3     |
-| **Yara**           | 3      | 3      | 4      | 4      | 3      | 3     | 3     | 3    | 3        | —    | 3     | 3     | 3     |
-| **Priya**          | 3      | 3      | 3      | 3      | 3      | 3     | 3     | 3    | 3        | 3    | —     | 3     | 3     |
-| **Elena**          | 3      | 3      | 3      | 3      | 3      | 3     | 3     | 3    | 3        | 3    | 3     | —     | 3     |
-| **Sable**          | 3      | 3      | 3      | 3      | 3      | 3     | 3     | 3    | 3        | 3    | 3     | 3     | —     |
+| Rater ↓ \ Rated → | Fatima | Renaud | Sunita | Tomasz | Dmitri | Kwame | Amara | Hiro | Carolina | Yara | Priya | Elena | Sable | Nadia | Mateo | Ingrid | Jun-Seo | Linh |
+|--------------------|--------|--------|--------|--------|--------|-------|-------|------|----------|------|-------|-------|-------|-------|-------|--------|---------|------|
+| **Fatima**         | —      | 3      | 3      | 4      | 3      | 5     | 4     | 4    | 4        | 4    | 3     | 3     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Renaud**         | 3      | —      | 3      | 3      | 3      | 4     | 4     | 4    | 4        | 3    | 3     | 3     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Sunita**         | 3      | 3      | —      | 4      | 3      | 4     | 3     | 3    | 3        | 4    | 3     | 3     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Tomasz**         | 4      | 3      | 4      | —      | 3      | 3     | 3     | 3    | 3        | 4    | 3     | 3     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Dmitri**         | 3      | 3      | 3      | 3      | —      | 5     | 4     | 4    | 4        | 3    | 3     | 3     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Kwame**          | 4      | 3      | 3      | 4      | 4      | —     | 4     | 4    | 4        | 3    | 3     | 3     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Amara**          | 4      | 3      | 3      | 3      | 4      | 4     | —     | 4    | 4        | 3    | 3     | 3     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Hiro**           | 4      | 3      | 3      | 3      | 4      | 4     | 4     | —    | 4        | 3    | 3     | 3     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Carolina**       | 4      | 3      | 3      | 3      | 4      | 4     | 4     | 4    | —        | 3    | 3     | 3     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Yara**           | 3      | 3      | 4      | 4      | 3      | 3     | 3     | 3    | 3        | —    | 3     | 3     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Priya**          | 3      | 3      | 3      | 3      | 3      | 3     | 3     | 3    | 3        | 3    | —     | 3     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Elena**          | 3      | 3      | 3      | 3      | 3      | 3     | 3     | 3    | 3        | 3    | 3     | —     | 3     | 3     | 3     | 3      | 3       | 3    |
+| **Sable**          | 3      | 3      | 3      | 3      | 3      | 3     | 3     | 3    | 3        | 3    | 3     | 3     | —     | 3     | 3     | 3      | 3       | 3    |
+| **Nadia**          | 3      | 3      | 3      | 3      | 3      | 3     | 3     | 3    | 3        | 3    | 3     | 3     | 3     | —     | 2     | 4      | 3       | 4    |
+| **Mateo**          | 3      | 3      | 3      | 3      | 3      | 3     | 3     | 3    | 3        | 3    | 3     | 3     | 3     | 3     | —     | 3      | 3       | 3    |
+| **Ingrid**         | 3      | 3      | 3      | 3      | 3      | 3     | 3     | 3    | 3        | 3    | 3     | 3     | 3     | 3     | 3     | —      | 3       | 3    |
+| **Jun-Seo**        | 3      | 3      | 3      | 3      | 3      | 3     | 3     | 3    | 3        | 3    | 3     | 3     | 3     | 3     | 3     | 3      | —       | 3    |
+| **Linh**           | 3      | 3      | 3      | 3      | 3      | 3     | 3     | 3    | 3        | 3    | 3     | 3     | 3     | 3     | 3     | 3      | 3       | —    |
 
 ## Change Log
 
@@ -83,3 +88,12 @@ Rows = the team member rating. Columns = the team member being rated.
 | 2026-03-27 | Tomasz | Fatima | 3 | 4 | Good coordination, fast CVE fix rollout, clear rebase instructions to all engineers. |
 | 2026-03-27 | Tomasz | Kwame | 4 | 3 | Committed to Tomasz's branch by mistake, requiring manual cleanup. Worktree discipline issue. |
 | 2026-03-28 | — | Sable | — | 3 | New hire (Principal UX Designer) added to matrix with default score of 3 for all team members. |
+| 2026-04-05 | — | Nadia | — | 3 | New manager (isnad-graph) added to matrix. Phase 15 team reorganization. |
+| 2026-04-05 | — | Mateo | — | 3 | New engineer (isnad-graph) added to matrix. Phase 15 team reorganization. |
+| 2026-04-05 | — | Ingrid | — | 3 | New engineer (isnad-graph) added to matrix. Phase 15 team reorganization. |
+| 2026-04-05 | — | Jun-Seo | — | 3 | New engineer (isnad-graph) added to matrix. Phase 15 team reorganization. |
+| 2026-04-05 | — | Linh | — | 3 | New engineer (isnad-graph) added to matrix. Phase 15 team reorganization. |
+| 2026-04-05 | Nadia | Mateo | 3 | 2 | Wave 2: committed PR #682 under wrong identity (Lucas Ferreira), required force-push amend. Identity discipline issue. |
+| 2026-04-05 | Nadia | Ingrid | 3 | 4 | Wave 2: delivered 2 PRs (#687, #688) cleanly with correct identities, all CI green. No issues. |
+| 2026-04-05 | Nadia | Linh | 3 | 4 | Wave 2: delivered ops PR #689 cleanly with correct identity, CI green. Solid first contribution. |
+| 2026-04-05 | Nadia | Jun-Seo | 3 | 3 | Wave 2: delivered PR #683 cleanly. Initially committed under wrong identity due to roster.json blocker (mitigating circumstance). No change. |
