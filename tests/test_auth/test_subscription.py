@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
-import pytest
 from fastapi.testclient import TestClient
 
 from src.auth.models import (
@@ -85,9 +84,7 @@ class TestSubscriptionEndpoint:
         assert data["days_remaining"] >= 4  # at least 4 days
         assert data["trial_expires"] is not None
 
-    def test_subscription_expired_trial(
-        self, client: TestClient, mock_neo4j: MagicMock
-    ) -> None:
+    def test_subscription_expired_trial(self, client: TestClient, mock_neo4j: MagicMock) -> None:
         """Expired trial should return expired status."""
         now = datetime.now(UTC)
         expired = now - timedelta(days=1)
@@ -117,9 +114,7 @@ class TestSubscriptionEndpoint:
         assert data["status"] == "expired"
         assert data["days_remaining"] == 0
 
-    def test_subscription_active_plan(
-        self, client: TestClient, mock_neo4j: MagicMock
-    ) -> None:
+    def test_subscription_active_plan(self, client: TestClient, mock_neo4j: MagicMock) -> None:
         """Active paid subscription should return unlimited days."""
         now = datetime.now(UTC)
 

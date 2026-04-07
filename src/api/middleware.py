@@ -361,8 +361,7 @@ class TrialEnforcementMiddleware(BaseHTTPMiddleware):
                     if isinstance(expires, datetime) and now > expires:
                         status = SubscriptionStatus.EXPIRED.value
                         neo4j.execute_write(
-                            "MATCH (u:USER {id: $uid}) "
-                            "SET u.subscription_status = $status",
+                            "MATCH (u:USER {id: $uid}) SET u.subscription_status = $status",
                             {"uid": user_id, "status": status},
                         )
 
@@ -371,10 +370,13 @@ class TrialEnforcementMiddleware(BaseHTTPMiddleware):
 
                     return Response(
                         status_code=403,
-                        content=json.dumps({
-                            "detail": "Your free trial has expired. Please upgrade to continue.",
-                            "code": "trial_expired",
-                        }),
+                        content=json.dumps(
+                            {
+                                "detail": "Your free trial has expired."
+                                " Please upgrade to continue.",
+                                "code": "trial_expired",
+                            }
+                        ),
                         media_type="application/json",
                     )
         except Exception:  # noqa: BLE001
@@ -472,9 +474,7 @@ async def require_auth(request: Request) -> User:
             raw_start = u.get("trial_start")
             raw_expires = u.get("trial_expires")
             if raw_start is not None:
-                trial_start = (
-                    raw_start if isinstance(raw_start, datetime) else datetime.now(UTC)
-                )
+                trial_start = raw_start if isinstance(raw_start, datetime) else datetime.now(UTC)
             if raw_expires is not None:
                 trial_expires = (
                     raw_expires if isinstance(raw_expires, datetime) else datetime.now(UTC)
