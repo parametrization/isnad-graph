@@ -85,11 +85,18 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          repository: noorinalabs/noorinalabs-design-system
+          path: noorinalabs-design-system
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Pack design-system dependency
+        working-directory: noorinalabs-design-system
+        run: npm pack --pack-destination /tmp/
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
