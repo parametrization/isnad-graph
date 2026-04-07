@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from src.api.middleware import require_auth
-from src.auth.models import AuthorizationUrlResponse, TokenResponse, User
+from src.auth.models import AuthorizationUrlResponse, Role, TokenResponse, User
 from src.auth.providers import (
     PROVIDERS,
     OAuthUserInfo,
@@ -75,27 +75,30 @@ def login(provider: str) -> AuthorizationUrlResponse:
     return AuthorizationUrlResponse(authorization_url=url)
 
 
-def _upsert_user(request: Request, user_id: str, user_info: OAuthUserInfo) -> None:
-    """Create or update the USER node in Neo4j.
+def _upsert_user(request: Request, user_id: str, user_info: OAuthUserInfo) -> str:
+    """Create or update the USER node in Neo4j. Returns the user's role.
 
     When ``AUTH_FIRST_USER_IS_ADMIN`` is ``true`` and no USER nodes exist yet,
     the newly created user is automatically promoted to admin.
+    New users receive the ``viewer`` role by default.
     """
     try:
         neo4j = request.app.state.neo4j
     except AttributeError:
         log.debug("neo4j_not_available_for_upsert", user_id=user_id)
-        return
+        return Role.VIEWER
 
     settings = get_settings()
 
     # Determine whether this user should be auto-promoted
     make_admin = False
+    default_role = Role.VIEWER
     if settings.auth.first_user_is_admin:
         count_result = neo4j.execute_read("MATCH (u:USER) RETURN count(u) AS cnt")
         user_count = count_result[0]["cnt"] if count_result else 0
         if user_count == 0:
             make_admin = True
+            default_role = Role.ADMIN
             log.info("first_user_auto_admin", user_id=user_id)
 
     query = """
@@ -106,13 +109,14 @@ def _upsert_user(request: Request, user_id: str, user_info: OAuthUserInfo) -> No
             u.provider = $provider,
             u.created_at = datetime(),
             u.is_admin = $is_admin,
-            u.is_suspended = false
+            u.is_suspended = false,
+            u.role = $default_role
         ON MATCH SET
             u.email = $email,
             u.name = $name
         RETURN u
     """
-    neo4j.execute_write(
+    records = neo4j.execute_write(
         query,
         {
             "user_id": user_id,
@@ -120,8 +124,14 @@ def _upsert_user(request: Request, user_id: str, user_info: OAuthUserInfo) -> No
             "name": user_info.name,
             "provider": user_info.provider,
             "is_admin": make_admin,
+            "default_role": default_role.value,
         },
     )
+
+    if records:
+        role: str = records[0]["u"].get("role", Role.VIEWER)
+        return role
+    return default_role.value
 
 
 @router.get("/auth/callback/{provider}")
@@ -147,9 +157,9 @@ async def callback(provider: str, code: str, state: str, request: Request) -> Re
     user_id = f"{user_info.provider}:{user_info.provider_user_id}"
 
     # Upsert user in Neo4j and apply first-user-is-admin if configured
-    _upsert_user(request, user_id, user_info)
+    user_role = _upsert_user(request, user_id, user_info)
 
-    access_token = create_access_token(user_id)
+    access_token = create_access_token(user_id, role=user_role)
     refresh_token = create_refresh_token(user_id)
 
     # Redirect to frontend callback page with token
@@ -206,8 +216,20 @@ def refresh(request: Request) -> TokenResponse:
     # Revoke the old refresh token (rotation)
     revoke_token(refresh_token)
 
+    # Look up current role from Neo4j so the new access token is up-to-date
+    user_role: str = Role.VIEWER
+    try:
+        neo4j = request.app.state.neo4j
+        records = neo4j.execute_read(
+            "MATCH (u:USER {id: $user_id}) RETURN u.role AS role", {"user_id": user_id}
+        )
+        if records and records[0].get("role"):
+            user_role = records[0]["role"]
+    except Exception:  # noqa: BLE001
+        log.debug("neo4j_role_lookup_failed_on_refresh", user_id=user_id)
+
     settings = get_settings().auth
-    new_access = create_access_token(user_id)
+    new_access = create_access_token(user_id, role=user_role)
     new_refresh = create_refresh_token(user_id)
 
     return TokenResponse(
