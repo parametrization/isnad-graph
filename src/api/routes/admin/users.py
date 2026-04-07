@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, ConfigDict
 
 from src.api.deps import get_neo4j
 from src.api.models import PaginatedResponse, UserAdminResponse, UserUpdateRequest
+from src.auth.models import Role
 from src.utils.neo4j_client import Neo4jClient
 
 router = APIRouter(prefix="/users")
@@ -102,6 +104,9 @@ def update_user(
         set_clauses.append("u.is_suspended = $is_suspended")
         params["is_suspended"] = body.is_suspended
     if body.role is not None:
+        role_values = {r.value for r in Role}
+        if body.role not in role_values:
+            raise HTTPException(status_code=400, detail=f"Invalid role: {body.role}")
         set_clauses.append("u.role = $role")
         params["role"] = body.role
 
@@ -114,6 +119,53 @@ def update_user(
         RETURN u
     """
     records = neo4j.execute_write(query, params)
+
+    if not records:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    r = records[0]
+    return UserAdminResponse(
+        id=r["u"]["id"],
+        email=r["u"].get("email", ""),
+        name=r["u"].get("name", ""),
+        provider=r["u"].get("provider", ""),
+        is_admin=r["u"].get("is_admin", False),
+        is_suspended=r["u"].get("is_suspended", False),
+        created_at=r["u"].get("created_at", ""),
+        role=r["u"].get("role"),
+    )
+
+
+class RoleUpdateRequest(BaseModel):
+    """Request body for changing a user's role."""
+
+    model_config = ConfigDict(frozen=True)
+
+    role: str
+
+
+@router.patch("/{user_id}/role", response_model=UserAdminResponse)
+def update_user_role(
+    user_id: str,
+    body: RoleUpdateRequest,
+    neo4j: Neo4jClient = Depends(get_neo4j),
+) -> UserAdminResponse:
+    """Change a user's role (admin only)."""
+    role_values = {r.value for r in Role}
+    if body.role not in role_values:
+        raise HTTPException(status_code=400, detail=f"Invalid role: {body.role}")
+
+    # Sync is_admin flag with role for backward compatibility
+    is_admin = body.role == Role.ADMIN
+
+    query = """
+        MATCH (u:USER {id: $user_id})
+        SET u.role = $role, u.is_admin = $is_admin
+        RETURN u
+    """
+    records = neo4j.execute_write(
+        query, {"user_id": user_id, "role": body.role, "is_admin": is_admin}
+    )
 
     if not records:
         raise HTTPException(status_code=404, detail="User not found")

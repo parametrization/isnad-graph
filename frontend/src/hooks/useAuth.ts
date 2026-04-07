@@ -1,20 +1,32 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import { createElement } from 'react'
 
+export type UserRole = 'viewer' | 'editor' | 'moderator' | 'admin'
+
 export interface AuthUser {
   id: string
   email: string
   name: string
   is_admin: boolean
   provider: string
+  role: UserRole | null
 }
 
 interface AuthContextValue {
   user: AuthUser | null
   loading: boolean
   isAdmin: boolean
+  role: UserRole
+  hasRole: (minRole: UserRole) => boolean
   logout: () => void
   signOut: () => Promise<void>
+}
+
+const ROLE_HIERARCHY: Record<UserRole, number> = {
+  viewer: 0,
+  editor: 1,
+  moderator: 2,
+  admin: 3,
 }
 
 const API_BASE = '/api/v1'
@@ -131,10 +143,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/login'
   }, [])
 
+  const userRole: UserRole = user?.role ?? 'viewer'
+
+  const hasRole = useCallback(
+    (minRole: UserRole): boolean => {
+      return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[minRole]
+    },
+    [userRole],
+  )
+
   const value: AuthContextValue = {
     user,
     loading,
     isAdmin: user?.is_admin ?? false,
+    role: userRole,
+    hasRole,
     logout,
     signOut,
   }

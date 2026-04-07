@@ -18,19 +18,23 @@ logger = logging.getLogger(__name__)
 _revoked_tokens: set[str] = set()
 
 
-def create_access_token(user_id: str, expires_minutes: int | None = None) -> str:
+def create_access_token(
+    user_id: str, *, role: str | None = None, expires_minutes: int | None = None
+) -> str:
     """Create a JWT access token for the given user."""
     settings = get_settings().auth
     if expires_minutes is None:
         expires_minutes = settings.access_token_expire_minutes
     expire = datetime.now(UTC) + timedelta(minutes=expires_minutes)
-    payload = {
+    payload: dict[str, object] = {
         "sub": user_id,
         "type": "access",
         "exp": expire,
         "iat": datetime.now(UTC),
         "jti": secrets.token_hex(16),
     }
+    if role is not None:
+        payload["role"] = role
     return str(jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm))
 
 

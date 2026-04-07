@@ -14,9 +14,11 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
-from src.auth.models import Role, User
+from src.auth.models import ROLE_HIERARCHY, Role, User
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from src.config import SecurityHeaderSettings
 
 # Default maximum request body size: 1 MB.
@@ -237,11 +239,31 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
-async def require_admin(request: Request) -> User:
-    """Require authenticated user with is_admin=True. Return 403 if not admin.
+def require_role(min_role: Role) -> Callable[..., object]:
+    """Return a FastAPI dependency that enforces a minimum role level.
 
-    Validates the user's role string against the Role enum and logs a warning
-    if an unknown role is encountered (defaults to viewer-level access).
+    The user's role is resolved from the DB record (via ``require_auth``).
+    Users without a role default to ``Role.VIEWER``.
+    """
+
+    async def dependency(request: Request) -> User:
+        user = await require_auth(request)
+        user_role = Role(user.role) if user.role else Role.VIEWER
+        if ROLE_HIERARCHY.get(user_role, 0) < ROLE_HIERARCHY[min_role]:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Requires {min_role.value} role or higher",
+            )
+        return user
+
+    return dependency
+
+
+async def require_admin(request: Request) -> User:
+    """Require authenticated user with admin role. Return 403 if not admin.
+
+    Delegates to ``require_role(Role.ADMIN)`` for role-based checks, and also
+    honours the legacy ``is_admin`` boolean for backward compatibility.
     """
     user = await require_auth(request)
 
@@ -256,7 +278,11 @@ async def require_admin(request: Request) -> User:
                 msg="User has role string not in Role enum; defaulting to viewer-level access",
             )
 
-    if not user.is_admin:
+    # Accept either legacy is_admin flag or role-based admin
+    user_role = Role(user.role) if user.role in {r.value for r in Role} else Role.VIEWER
+    is_role_admin = ROLE_HIERARCHY.get(user_role, 0) >= ROLE_HIERARCHY[Role.ADMIN]
+
+    if not user.is_admin and not is_role_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
     return user
 
@@ -310,6 +336,8 @@ async def require_auth(request: Request) -> User:
     except Exception:  # noqa: BLE001
         log.debug("neo4j_user_lookup_failed", user_id=user_id)
 
+    # Fall back to JWT claims when Neo4j is unavailable
+    token_role = payload.get("role")
     return User(
         id=user_id,
         email=user_id,
@@ -317,4 +345,5 @@ async def require_auth(request: Request) -> User:
         provider="jwt",
         provider_user_id=user_id,
         created_at=datetime.now(UTC),
+        role=token_role if isinstance(token_role, str) else None,
     )
