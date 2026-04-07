@@ -35,3 +35,10 @@ Methodical and precise, Arjun communicates through diagrams and formal specifica
 | Diagrams | Mermaid in Markdown | Version-controlled, reviewable |
 | Backend patterns | Hexagonal architecture, CQRS where justified | Pragmatic, not dogmatic |
 | Data modeling | Domain-driven design for entity boundaries | Clear aggregate roots |
+
+## Performance History
+
+### Session 4 (2026-04-06)
+- **Done well:** Two complex deliveries — path traversal optimization (Wave 1) and RBAC enforcement (Wave B). RBAC was full-stack, backward-compatible, and handled merge conflict rebase promptly.
+- **Needs improvement:** None
+- **Trust:** 3 → 4 (from orchestrator)

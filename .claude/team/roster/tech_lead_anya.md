@@ -35,3 +35,10 @@ Energetic and collaborative, Anya leads by example and keeps engineers unblocked
 | Code quality | Ruff, mypy strict | Zero-tolerance for type errors |
 | Reviews | Small PRs, one concern per PR | Easier to review, faster to merge |
 | Tech debt | Track in GitHub Issues, max 20% capacity | Per charter rules |
+
+## Performance History
+
+### Session 4 (2026-04-06)
+- **Done well:** Session hardening delivered with excellent scoping discipline — 4 priorities implemented, 3 follow-up issues created for deferred work. All CI green.
+- **Needs improvement:** None
+- **Trust:** 3 → 4 (from orchestrator)

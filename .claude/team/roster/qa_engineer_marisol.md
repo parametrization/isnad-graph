@@ -35,3 +35,10 @@ Detail-oriented and persistent, Marisol writes bug reports that engineers actual
 | Test data | Factory pattern, not fixtures files | Maintainable test data |
 | CI integration | Test gates block merge | Quality is non-negotiable |
 | Bug tracking | GitHub Issues with reproduction steps | Structured templates |
+
+## Performance History
+
+### Session 4 (2026-04-06)
+- **Done well:** 19 Playwright E2E tests with well-designed API mock strategy
+- **Needs improvement:** package-lock.json contained local tarball path (/tmp/) that broke CI. Must verify lockfile doesn't contain local paths before pushing.
+- **Trust:** 3 (neutral — good test work offset by process issue)
