@@ -36,6 +36,8 @@ const ROLE_HIERARCHY: Record<UserRole, number> = {
 }
 
 const API_BASE = '/api/v1'
+const AUTH_BASE = '/auth'
+const USER_BASE = '/api/v1/users'
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
@@ -46,7 +48,7 @@ function getCsrfToken(): string {
 
 async function refreshAccessToken(): Promise<string | null> {
   try {
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
+    const res = await fetch(`${AUTH_BASE}/token/refresh`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -99,8 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     const token = localStorage.getItem('access_token')
     if (token) {
-      fetch(`${API_BASE}/auth/logout`, {
-        method: 'POST',
+      fetch(`${API_BASE}/sessions`, {
+        method: 'DELETE',
         credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       }).catch(() => {})
@@ -129,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      let res = await fetch(`${API_BASE}/auth/me`, {
+      let res = await fetch(`${USER_BASE}/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
@@ -142,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false)
           return
         }
-        res = await fetch(`${API_BASE}/auth/me`, {
+        res = await fetch(`${USER_BASE}/me`, {
           headers: { Authorization: `Bearer ${token}` },
         })
       }
@@ -165,8 +167,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Call logout endpoint (best-effort — clear tokens regardless)
     if (token) {
       try {
-        await fetch(`${API_BASE}/auth/logout`, {
-          method: 'POST',
+        await fetch(`${API_BASE}/sessions`, {
+          method: 'DELETE',
           credentials: 'include',
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -185,8 +187,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (token) {
       try {
-        await fetch(`${API_BASE}/auth/logout-all`, {
-          method: 'POST',
+        await fetch(`${API_BASE}/sessions`, {
+          method: 'DELETE',
           credentials: 'include',
           headers: { Authorization: `Bearer ${token}` },
         })
