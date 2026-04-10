@@ -9,8 +9,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict
 
+from src.api.auth import User
 from src.api.middleware import require_auth
-from src.auth.models import User
 
 router = APIRouter(prefix="/users/me")
 

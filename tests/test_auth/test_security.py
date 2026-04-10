@@ -50,8 +50,8 @@ def app(mock_neo4j: MagicMock):  # noqa: ANN201
     from fastapi import FastAPI
 
     from src.api.app import create_app
+    from src.api.auth import User
     from src.api.middleware import require_auth
-    from src.auth.models import User
 
     app: FastAPI = create_app()
     app.state.neo4j = mock_neo4j

@@ -1,16 +1,63 @@
-"""JWKS-based RS256 JWT validation for tokens issued by user-service."""
+"""Authentication — JWT validation via user-service JWKS and auth models.
+
+Relocated from ``src.auth`` as part of the user-service extraction. The old
+``src/auth/`` directory contained OAuth providers, sessions, tokens, 2FA, and
+verification code that has been migrated to user-service.  Only the JWKS
+validation and shared models remain and now live here.
+"""
 
 from __future__ import annotations
 
 import logging
 import time
+from enum import StrEnum
 
 import httpx
 from jose import JWTError, jwt
+from pydantic import BaseModel, ConfigDict
 
 from src.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Auth models
+# ---------------------------------------------------------------------------
+
+
+class Role(StrEnum):
+    """User roles with hierarchical privilege levels."""
+
+    VIEWER = "viewer"
+    EDITOR = "editor"
+    MODERATOR = "moderator"
+    ADMIN = "admin"
+
+
+ROLE_HIERARCHY: dict[Role, int] = {
+    Role.VIEWER: 0,
+    Role.EDITOR: 1,
+    Role.MODERATOR: 2,
+    Role.ADMIN: 3,
+}
+
+
+class User(BaseModel):
+    """Authenticated user context built from user-service JWT claims."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    email: str
+    name: str
+    role: str | None = None
+    is_admin: bool = False
+    subscription_status: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# JWKS-based RS256 JWT validation
+# ---------------------------------------------------------------------------
 
 # Module-level JWKS cache
 _jwks_cache: dict[str, object] | None = None

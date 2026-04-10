@@ -78,10 +78,10 @@ class TestJWKSFetch:
     """Test JWKS fetching and caching."""
 
     def test_fetch_jwks_caches_result(self) -> None:
-        from src.auth.jwks import fetch_jwks, invalidate_jwks_cache
+        from src.api.auth import fetch_jwks, invalidate_jwks_cache
 
         invalidate_jwks_cache()
-        with patch("src.auth.jwks.httpx.get") as mock_get:
+        with patch("src.api.auth.httpx.get") as mock_get:
             mock_resp = MagicMock()
             mock_resp.json.return_value = _JWKS
             mock_resp.raise_for_status = MagicMock()
@@ -98,10 +98,10 @@ class TestJWKSFetch:
         invalidate_jwks_cache()
 
     def test_fetch_jwks_raises_on_unreachable(self) -> None:
-        from src.auth.jwks import fetch_jwks, invalidate_jwks_cache
+        from src.api.auth import fetch_jwks, invalidate_jwks_cache
 
         invalidate_jwks_cache()
-        with patch("src.auth.jwks.httpx.get", side_effect=httpx.ConnectError("unreachable")):
+        with patch("src.api.auth.httpx.get", side_effect=httpx.ConnectError("unreachable")):
             with pytest.raises(httpx.ConnectError):
                 fetch_jwks()
         invalidate_jwks_cache()
@@ -111,11 +111,11 @@ class TestVerifyUserServiceToken:
     """Test RS256 JWT verification against JWKS."""
 
     def test_valid_token(self) -> None:
-        from src.auth.jwks import invalidate_jwks_cache, verify_user_service_token
+        from src.api.auth import invalidate_jwks_cache, verify_user_service_token
 
         invalidate_jwks_cache()
         token = _make_token()
-        with patch("src.auth.jwks.httpx.get") as mock_get:
+        with patch("src.api.auth.httpx.get") as mock_get:
             mock_resp = MagicMock()
             mock_resp.json.return_value = _JWKS
             mock_resp.raise_for_status = MagicMock()
@@ -129,11 +129,11 @@ class TestVerifyUserServiceToken:
         invalidate_jwks_cache()
 
     def test_expired_token_raises(self) -> None:
-        from src.auth.jwks import invalidate_jwks_cache, verify_user_service_token
+        from src.api.auth import invalidate_jwks_cache, verify_user_service_token
 
         invalidate_jwks_cache()
         token = _make_token(expired=True)
-        with patch("src.auth.jwks.httpx.get") as mock_get:
+        with patch("src.api.auth.httpx.get") as mock_get:
             mock_resp = MagicMock()
             mock_resp.json.return_value = _JWKS
             mock_resp.raise_for_status = MagicMock()
@@ -144,7 +144,7 @@ class TestVerifyUserServiceToken:
         invalidate_jwks_cache()
 
     def test_invalid_signature_raises(self) -> None:
-        from src.auth.jwks import invalidate_jwks_cache, verify_user_service_token
+        from src.api.auth import invalidate_jwks_cache, verify_user_service_token
 
         invalidate_jwks_cache()
         # Sign with a different key
@@ -155,7 +155,7 @@ class TestVerifyUserServiceToken:
             serialization.NoEncryption(),
         )
         token = _make_token(key=other_pem)
-        with patch("src.auth.jwks.httpx.get") as mock_get:
+        with patch("src.api.auth.httpx.get") as mock_get:
             mock_resp = MagicMock()
             mock_resp.json.return_value = _JWKS
             mock_resp.raise_for_status = MagicMock()
@@ -166,11 +166,11 @@ class TestVerifyUserServiceToken:
         invalidate_jwks_cache()
 
     def test_jwks_unreachable_raises_http_error(self) -> None:
-        from src.auth.jwks import invalidate_jwks_cache, verify_user_service_token
+        from src.api.auth import invalidate_jwks_cache, verify_user_service_token
 
         invalidate_jwks_cache()
         token = _make_token()
-        with patch("src.auth.jwks.httpx.get", side_effect=httpx.ConnectError("down")):
+        with patch("src.api.auth.httpx.get", side_effect=httpx.ConnectError("down")):
             with pytest.raises(httpx.ConnectError):
                 verify_user_service_token(token)
         invalidate_jwks_cache()
@@ -191,7 +191,7 @@ class TestRequireAuth:
         assert resp.status_code == 401
 
     def test_invalid_token_returns_401(self, client: TestClient) -> None:
-        with patch("src.auth.jwks.verify_user_service_token", side_effect=ValueError("bad")):
+        with patch("src.api.auth.verify_user_service_token", side_effect=ValueError("bad")):
             resp = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": "Bearer invalid-token"},
@@ -200,7 +200,7 @@ class TestRequireAuth:
 
     def test_jwks_unavailable_returns_503(self, client: TestClient) -> None:
         with patch(
-            "src.auth.jwks.verify_user_service_token",
+            "src.api.auth.verify_user_service_token",
             side_effect=httpx.ConnectError("unreachable"),
         ):
             resp = client.get(
@@ -218,7 +218,7 @@ class TestRequireAuth:
             "subscription_status": "active",
             "type": "access",
         }
-        with patch("src.auth.jwks.verify_user_service_token", return_value=payload):
+        with patch("src.api.auth.verify_user_service_token", return_value=payload):
             resp = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": "Bearer valid-token"},
@@ -239,7 +239,7 @@ class TestRoleBasedAccess:
             "type": "access",
         }
         mock_neo4j.execute_read.return_value = []
-        with patch("src.auth.jwks.verify_user_service_token", return_value=payload):
+        with patch("src.api.auth.verify_user_service_token", return_value=payload):
             # Admin endpoints should be accessible
             resp = client.get(
                 "/api/v1/admin/users",
@@ -256,7 +256,7 @@ class TestRoleBasedAccess:
             "subscription_status": "active",
             "type": "access",
         }
-        with patch("src.auth.jwks.verify_user_service_token", return_value=payload):
+        with patch("src.api.auth.verify_user_service_token", return_value=payload):
             resp = client.get(
                 "/api/v1/admin/users",
                 headers={"Authorization": "Bearer viewer-token"},
@@ -264,19 +264,19 @@ class TestRoleBasedAccess:
         assert resp.status_code == 403
 
     def test_researcher_maps_to_editor(self) -> None:
+        from src.api.auth import Role
         from src.api.middleware import _resolve_role
-        from src.auth.models import Role
 
         assert _resolve_role(["researcher"]) == Role.EDITOR
 
     def test_highest_role_wins(self) -> None:
+        from src.api.auth import Role
         from src.api.middleware import _resolve_role
-        from src.auth.models import Role
 
         assert _resolve_role(["reader", "admin"]) == Role.ADMIN
 
     def test_empty_roles_default_to_viewer(self) -> None:
+        from src.api.auth import Role
         from src.api.middleware import _resolve_role
-        from src.auth.models import Role
 
         assert _resolve_role([]) == Role.VIEWER

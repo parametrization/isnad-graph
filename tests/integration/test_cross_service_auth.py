@@ -116,7 +116,7 @@ def test_settings(monkeypatch: pytest.MonkeyPatch) -> Settings:
 def _patch_settings(test_settings: Settings) -> Iterator[None]:
     targets = [
         "src.config.get_settings",
-        "src.auth.jwks.get_settings",
+        "src.api.auth.get_settings",
     ]
     patches = [patch(t, return_value=test_settings) for t in targets]
     for p in patches:
@@ -129,7 +129,7 @@ def _patch_settings(test_settings: Settings) -> Iterator[None]:
 @pytest.fixture(autouse=True)
 def _invalidate_jwks_cache() -> Iterator[None]:
     """Ensure JWKS cache is clean before and after each test."""
-    from src.auth.jwks import invalidate_jwks_cache
+    from src.api.auth import invalidate_jwks_cache
 
     invalidate_jwks_cache()
     yield
@@ -203,7 +203,7 @@ class TestValidTokenFlow:
 
     def test_valid_jwt_grants_api_access(self, client: TestClient, mock_neo4j: MagicMock) -> None:
         token = _make_token()
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": f"Bearer {token}"},
@@ -215,7 +215,7 @@ class TestValidTokenFlow:
     ) -> None:
         """The middleware should extract user info from the JWT claims."""
         token = _make_token(sub="user-456", email="scholar@example.com", roles=["admin"])
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp = client.get(
                 "/api/v1/admin/users",
                 headers={"Authorization": f"Bearer {token}"},
@@ -230,7 +230,7 @@ class TestExpiredTokenRejection:
 
     def test_expired_jwt_returns_401(self, client: TestClient) -> None:
         token = _make_token(expired=True)
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": f"Bearer {token}"},
@@ -247,7 +247,7 @@ class TestRefreshedToken:
         # Second token (simulates a refreshed token — new jti, fresh exp)
         token_2 = _make_token()
 
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp_1 = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": f"Bearer {token_1}"},
@@ -267,7 +267,7 @@ class TestRoleBasedAccessControl:
         self, client: TestClient, mock_neo4j: MagicMock
     ) -> None:
         token = _make_token(roles=["admin"])
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp = client.get(
                 "/api/v1/admin/users",
                 headers={"Authorization": f"Bearer {token}"},
@@ -276,7 +276,7 @@ class TestRoleBasedAccessControl:
 
     def test_viewer_blocked_from_admin_endpoints(self, client: TestClient) -> None:
         token = _make_token(roles=["reader"])
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp = client.get(
                 "/api/v1/admin/users",
                 headers={"Authorization": f"Bearer {token}"},
@@ -285,7 +285,7 @@ class TestRoleBasedAccessControl:
 
     def test_moderator_blocked_from_admin_endpoints(self, client: TestClient) -> None:
         token = _make_token(roles=["moderator"])
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp = client.get(
                 "/api/v1/admin/users",
                 headers={"Authorization": f"Bearer {token}"},
@@ -296,7 +296,7 @@ class TestRoleBasedAccessControl:
         self, client: TestClient, mock_neo4j: MagicMock
     ) -> None:
         token = _make_token(roles=["researcher"])
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": f"Bearer {token}"},
@@ -307,7 +307,7 @@ class TestRoleBasedAccessControl:
         self, client: TestClient, mock_neo4j: MagicMock
     ) -> None:
         token = _make_token(roles=["reader", "admin"])
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp = client.get(
                 "/api/v1/admin/users",
                 headers={"Authorization": f"Bearer {token}"},
@@ -320,7 +320,7 @@ class TestUserServiceDown:
 
     def test_jwks_unreachable_returns_503(self, client: TestClient) -> None:
         token = _make_token()
-        with patch("src.auth.jwks.httpx.get", side_effect=httpx.ConnectError("connection refused")):
+        with patch("src.api.auth.httpx.get", side_effect=httpx.ConnectError("connection refused")):
             resp = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": f"Bearer {token}"},
@@ -329,7 +329,7 @@ class TestUserServiceDown:
 
     def test_jwks_timeout_returns_503(self, client: TestClient) -> None:
         token = _make_token()
-        with patch("src.auth.jwks.httpx.get", side_effect=httpx.ReadTimeout("timeout")):
+        with patch("src.api.auth.httpx.get", side_effect=httpx.ReadTimeout("timeout")):
             resp = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": f"Bearer {token}"},
@@ -344,7 +344,7 @@ class TestTokenRevocation:
         """Simulates token revocation via key rotation — a token signed with
         the old key fails verification against the new JWKS."""
         token = _make_token(key=_OTHER_PEM)
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": f"Bearer {token}"},
@@ -354,7 +354,7 @@ class TestTokenRevocation:
     def test_non_access_token_type_rejected(self, client: TestClient) -> None:
         """A refresh token should not be accepted as an access token."""
         token = _make_token(token_type="refresh")
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": f"Bearer {token}"},
@@ -371,7 +371,7 @@ class TestTokenRevocation:
             headers={"Authorization": "Bearer not-a-jwt"},
         )
         # Will fail JWKS verification or JWT decode
-        with patch("src.auth.jwks.httpx.get", return_value=_mock_jwks_response()):
+        with patch("src.api.auth.httpx.get", return_value=_mock_jwks_response()):
             resp = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": "Bearer not-a-jwt"},

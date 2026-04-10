@@ -156,5 +156,5 @@ def client(app: FastAPI) -> TestClient:
         ]
     }
 
-    with patch("src.auth.jwks.fetch_jwks", return_value=test_jwks):
+    with patch("src.api.auth.fetch_jwks", return_value=test_jwks):
         yield TestClient(app, raise_server_exceptions=False)

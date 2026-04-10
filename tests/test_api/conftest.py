@@ -8,8 +8,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from src.api.auth import User
 from src.api.middleware import require_auth
-from src.auth.models import User
 
 
 def _fake_user() -> User:

@@ -14,7 +14,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
-from src.auth.models import ROLE_HIERARCHY, Role, User
+from src.api.auth import ROLE_HIERARCHY, Role, User
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -309,7 +309,7 @@ async def require_auth(request: Request) -> User:
 
     token = auth_header.removeprefix("Bearer ")
 
-    from src.auth.jwks import verify_user_service_token
+    from src.api.auth import verify_user_service_token
 
     try:
         payload = verify_user_service_token(token)

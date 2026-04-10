@@ -7,6 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from src.api.auth import User
 from src.api.deps import get_pg
 from src.api.middleware import require_admin
 from src.api.models import (
@@ -16,7 +17,6 @@ from src.api.models import (
     SystemConfig,
     SystemConfigUpdate,
 )
-from src.auth.models import User
 from src.utils.pg_client import PgClient
 
 router = APIRouter(prefix="/config")
