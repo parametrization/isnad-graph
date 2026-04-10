@@ -8,8 +8,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from src.api.auth import User
 from src.api.middleware import require_admin
-from src.auth.models import User
 from src.config import (
     AuthSettings,
     Neo4jSettings,

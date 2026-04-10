@@ -8,8 +8,8 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
+from src.api.auth import User
 from src.api.middleware import require_admin
-from src.auth.models import User
 from tests.test_api.test_admin import _test_settings
 
 

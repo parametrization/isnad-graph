@@ -42,7 +42,7 @@ class TestProtectedEndpoints:
     ) -> None:
         mock_neo4j.execute_read.return_value = []
         mock = _mock_verify(_VALID_PAYLOAD)
-        with patch("src.auth.jwks.verify_user_service_token", mock):
+        with patch("src.api.auth.verify_user_service_token", mock):
             resp = client.get(
                 "/api/v1/narrators",
                 headers={"Authorization": "Bearer fake-token"},
