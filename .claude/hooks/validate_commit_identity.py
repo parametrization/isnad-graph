@@ -10,9 +10,9 @@ Exit codes:
 """
 
 import json
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 # Load roster from shared JSON file — single source of truth for all hooks
 _ROSTER_PATH = Path(__file__).resolve().parent.parent / "team" / "roster.json"
@@ -44,13 +44,17 @@ def main() -> None:
     name_match = re.search(r'-c\s+user\.name=["\']?([^"\']+)["\']?', command)
     email_match = re.search(r'-c\s+user\.email=["\']?([^"\']+)["\']?', command)
 
+    _example = (
+        'Example: git -c user.name="Kwame Asante"'
+        ' -c user.email="parametrization+Kwame.Asante@gmail.com" commit -m "..."'
+    )
+
     if not name_match:
         result = {
             "decision": "block",
             "reason": (
                 "BLOCKED: git commit missing `-c user.name=` flag. "
-                "Charter § Commit Identity requires per-commit identity via -c flags. "
-                'Example: git -c user.name="Kwame Asante" -c user.email="parametrization+Kwame.Asante@gmail.com" commit -m "..."'
+                "Charter § Commit Identity requires per-commit identity via -c flags. " + _example
             ),
         }
         print(json.dumps(result))
@@ -61,8 +65,7 @@ def main() -> None:
             "decision": "block",
             "reason": (
                 "BLOCKED: git commit missing `-c user.email=` flag. "
-                "Charter § Commit Identity requires per-commit identity via -c flags. "
-                'Example: git -c user.name="Kwame Asante" -c user.email="parametrization+Kwame.Asante@gmail.com" commit -m "..."'
+                "Charter § Commit Identity requires per-commit identity via -c flags. " + _example
             ),
         }
         print(json.dumps(result))
