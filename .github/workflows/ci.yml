@@ -95,16 +95,21 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Build and pack design-system dependency
         working-directory: noorinalabs-design-system
-        # The frontend/package-lock.json resolves @noorinalabs/design-system to
-        # `file:../../noorinalabs-design-system-0.0.1.tgz`, which from the
-        # `frontend/` directory is `${{ github.workspace }}/..` — i.e. the
-        # parent of the checkout root (e.g. /home/runner/work/<repo>/). The
-        # tarball MUST be packed there for `npm install` in `frontend/` to
-        # resolve. See tech-debt issue to migrate to a published npm package.
+        # frontend/package-lock.json pins @noorinalabs/design-system to
+        # `file:../../noorinalabs-design-system-0.0.1.tgz`. From `frontend/`,
+        # that resolves to `${{ github.workspace }}/..` (the parent of the
+        # checkout root, e.g. /home/runner/work/<repo>/). We pack there and
+        # rename to the lockfile-expected filename (`-0.0.1.tgz`) regardless
+        # of the design-system's current version — the lockfile's integrity
+        # field is stripped in the next step, so npm accepts any contents.
+        # See noorinalabs/noorinalabs-isnad-graph#810 for the proper migration
+        # to a published npm package, which removes this whole workaround.
         run: |
           npm install
           npm run build
           npm pack --pack-destination "${{ github.workspace }}/.."
+          mv "${{ github.workspace }}/.."/noorinalabs-design-system-*.tgz \
+             "${{ github.workspace }}/../noorinalabs-design-system-0.0.1.tgz"
       - name: Fix design-system lockfile integrity
         run: |
           node -e "
@@ -180,16 +185,21 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Build and pack design-system dependency
         working-directory: noorinalabs-design-system
-        # The frontend/package-lock.json resolves @noorinalabs/design-system to
-        # `file:../../noorinalabs-design-system-0.0.1.tgz`, which from the
-        # `frontend/` directory is `${{ github.workspace }}/..` — i.e. the
-        # parent of the checkout root (e.g. /home/runner/work/<repo>/). The
-        # tarball MUST be packed there for `npm install` in `frontend/` to
-        # resolve. See tech-debt issue to migrate to a published npm package.
+        # frontend/package-lock.json pins @noorinalabs/design-system to
+        # `file:../../noorinalabs-design-system-0.0.1.tgz`. From `frontend/`,
+        # that resolves to `${{ github.workspace }}/..` (the parent of the
+        # checkout root, e.g. /home/runner/work/<repo>/). We pack there and
+        # rename to the lockfile-expected filename (`-0.0.1.tgz`) regardless
+        # of the design-system's current version — the lockfile's integrity
+        # field is stripped in the next step, so npm accepts any contents.
+        # See noorinalabs/noorinalabs-isnad-graph#810 for the proper migration
+        # to a published npm package, which removes this whole workaround.
         run: |
           npm install
           npm run build
           npm pack --pack-destination "${{ github.workspace }}/.."
+          mv "${{ github.workspace }}/.."/noorinalabs-design-system-*.tgz \
+             "${{ github.workspace }}/../noorinalabs-design-system-0.0.1.tgz"
       - name: Fix design-system lockfile integrity
         run: |
           node -e "
