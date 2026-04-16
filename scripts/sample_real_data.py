@@ -16,7 +16,6 @@ from pathlib import Path
 
 import pyarrow.csv as pcsv
 import pyarrow.parquet as pq
-
 from src.parse.base import read_csv_robust
 
 DATA_RAW_DEFAULT = Path("data/raw")

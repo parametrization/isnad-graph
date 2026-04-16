@@ -95,10 +95,16 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Build and pack design-system dependency
         working-directory: noorinalabs-design-system
+        # The frontend/package-lock.json resolves @noorinalabs/design-system to
+        # `file:../../noorinalabs-design-system-0.0.1.tgz`, which from the
+        # `frontend/` directory is `${{ github.workspace }}/..` — i.e. the
+        # parent of the checkout root (e.g. /home/runner/work/<repo>/). The
+        # tarball MUST be packed there for `npm install` in `frontend/` to
+        # resolve. See tech-debt issue to migrate to a published npm package.
         run: |
           npm install
           npm run build
-          npm pack --pack-destination /tmp/
+          npm pack --pack-destination "${{ github.workspace }}/.."
       - name: Fix design-system lockfile integrity
         run: |
           node -e "
@@ -113,25 +119,34 @@ jobs:
       - run: npx tsc --noEmit
       - run: npx vitest run
 
+  # IMPORTANT: keep `RUFF_VERSION` below in sync with `rev:` in
+  # `.pre-commit-config.yaml` so local pre-commit and CI agree on which
+  # ruff (and thus which lint rules) to enforce. Drift between the two
+  # caused all `scripts-lint` runs to fail on `main` while `pre-commit`
+  # passed locally — see noorinalabs/noorinalabs-isnad-graph#809.
   hooks-lint:
     runs-on: ubuntu-latest
+    env:
+      RUFF_VERSION: "0.15.11"
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
-      - run: uvx ruff check .claude/hooks/
-      - run: uvx ruff format --check .claude/hooks/
+      - run: uvx ruff@${{ env.RUFF_VERSION }} check .claude/hooks/
+      - run: uvx ruff@${{ env.RUFF_VERSION }} format --check .claude/hooks/
 
   scripts-lint:
     runs-on: ubuntu-latest
+    env:
+      RUFF_VERSION: "0.15.11"
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
-      - run: uvx ruff check scripts/
-      - run: uvx ruff format --check scripts/
+      - run: uvx ruff@${{ env.RUFF_VERSION }} check scripts/
+      - run: uvx ruff@${{ env.RUFF_VERSION }} format --check scripts/
 
   lockfile-validation:
     runs-on: ubuntu-latest
@@ -165,10 +180,16 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Build and pack design-system dependency
         working-directory: noorinalabs-design-system
+        # The frontend/package-lock.json resolves @noorinalabs/design-system to
+        # `file:../../noorinalabs-design-system-0.0.1.tgz`, which from the
+        # `frontend/` directory is `${{ github.workspace }}/..` — i.e. the
+        # parent of the checkout root (e.g. /home/runner/work/<repo>/). The
+        # tarball MUST be packed there for `npm install` in `frontend/` to
+        # resolve. See tech-debt issue to migrate to a published npm package.
         run: |
           npm install
           npm run build
-          npm pack --pack-destination /tmp/
+          npm pack --pack-destination "${{ github.workspace }}/.."
       - name: Fix design-system lockfile integrity
         run: |
           node -e "
