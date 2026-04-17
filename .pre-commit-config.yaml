@@ -22,8 +22,11 @@ repos:
   # ruff-format runs first so format fixes don't trigger re-lint.
   # `.claude/worktrees/` is excluded because it contains scratch checkouts of
   # other branches; reformatting them would silently overwrite work in progress.
+  # Keep `rev` in sync with `uv.lock` (currently ruff 0.15.x) AND with the
+  # `uvx ruff@<version>` calls in `.github/workflows/ci.yml` so the same
+  # ruff is used everywhere — local pre-commit, scripts-lint CI, hooks-lint CI.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.6
+    rev: v0.15.11
     hooks:
       - id: ruff-format
         name: ruff-format

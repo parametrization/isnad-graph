@@ -12,7 +12,6 @@ import sys
 from pathlib import Path
 
 import pyarrow.parquet as pq
-
 from src.parse.schemas import (
     COLLECTION_SCHEMA,
     HADITH_SCHEMA,
