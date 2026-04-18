@@ -36,7 +36,11 @@ try:
     from annunaki_log import log_pretooluse_block
 except ImportError:
     # Child repos may not have annunaki instrumentation installed yet.
-    def log_pretooluse_block(*_args, **_kwargs) -> None:  # type: ignore[no-redef]
+    # Signature must match annunaki_log.log_pretooluse_block exactly — mypy
+    # requires identical signatures across conditional function variants.
+    def log_pretooluse_block(  # type: ignore[no-redef]
+        hook_name: str, command: str, reason: str, tool_name: str = "Bash"
+    ) -> None:
         return None
 
 
