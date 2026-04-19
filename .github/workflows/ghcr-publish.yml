@@ -86,17 +86,45 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: design-system-src
 
-      - name: Build design-system tarball (frontend only)
+      - name: Build and pack design-system (frontend only)
         if: matrix.component == 'frontend'
         working-directory: design-system-src
+        # CRITICAL pattern from ci.yml@f5f413f (Marisol, 2026-04-06):
+        # v0.0.1's package.json declares `files: ["dist"]` with NO prepack /
+        # prepare hook, and `dist/` is not committed. A fresh clone packs an
+        # empty 172-byte tarball (just package.json metadata) unless we run
+        # the build first. We also MUST use plain `npm install` — NOT
+        # `--omit=dev` — because Vite (the builder) is a devDependency.
+        # Sequence: install ALL deps → run build (populates dist/) → pack.
         run: |
-          npm install --omit=dev
+          npm install
+          npm run build
           npm pack
-          # npm pack emits <name>-<version>.tgz in the CWD. Move it into the
-          # frontend build context root so the Dockerfile's COPY picks it up.
-          # Dockerfile pins the name explicitly (noorinalabs-design-system-0.0.1.tgz).
           ls -lh ./*.tgz
           mv ./noorinalabs-design-system-*.tgz ../frontend/
+
+      - name: Fix design-system lockfile integrity (frontend only)
+        if: matrix.component == 'frontend'
+        working-directory: frontend
+        # Pattern from ci.yml@615a692 (Marisol, 2026-04-06). The committed
+        # frontend/package-lock.json records the integrity hash of the v0.0.1
+        # tarball that was built and packed at release time. A freshly-packed
+        # tarball from source has a different hash (timestamps / filesystem
+        # ordering), which makes `npm ci` inside the Dockerfile fail with
+        # EINTEGRITY. Strip the integrity field from the lockfile entry;
+        # npm then trusts the resolved `file:` path without checksum.
+        # Because this rewrites the lockfile inside the frontend/ build
+        # context (before docker/build-push-action uploads the context),
+        # the Dockerfile's `COPY package.json package-lock.json ./` + `npm ci`
+        # see the patched lockfile and succeed.
+        run: |
+          node -e "
+            const fs = require('fs');
+            const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+            const pkg = lock.packages['node_modules/@noorinalabs/design-system'];
+            if (pkg) { delete pkg.integrity; }
+            fs.writeFileSync('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
+          "
 
       - name: Set up QEMU (multi-arch)
         if: contains(matrix.platforms, 'arm64')
