@@ -1,19 +1,32 @@
 # Publish container images to GitHub Container Registry (GHCR).
 #
-# Triggers: tag push matching v* or phase*-wave* patterns.
-# Builds multi-arch (amd64 + arm64) images for the API service
-# and pushes to ghcr.io/noorinalabs/noorinalabs-isnad-graph.
+# Triggers:
+#   - push to main (every merge republishes :latest + :sha-<sha>)
+#   - tag push matching v* or phase*-wave* patterns
+#   - workflow_dispatch (manual)
 #
-# Manual dispatch is also supported for ad-hoc builds — useful for testing
-# the workflow on a feature branch before tagging. The image will be tagged
-# with the branch name and short SHA.
+# Publishes two images in parallel via matrix:
+#   - ghcr.io/noorinalabs/noorinalabs-isnad-graph           (api)
+#   - ghcr.io/noorinalabs/noorinalabs-isnad-graph-frontend  (frontend)
 #
-# See docs/devops/ghcr-publish-design.md for architecture decisions.
+# Notify-deploy (formerly notify-deploy.yml) is folded into this workflow as a
+# dependent job so deploy only fires after BOTH images are published successfully.
+# This closes the race condition where the previous standalone notify-deploy
+# workflow dispatched noorinalabs-deploy on every push-to-main without waiting
+# for publish. See isnad-graph#817 and main#145.
+#
+# The frontend build needs the design-system tarball staged into the frontend
+# build context. We check out noorinalabs-design-system @ v0.0.1, run
+# `npm install --omit=dev && npm pack`, and move the .tgz into ./frontend/
+# before docker/build-push-action runs. The frontend Dockerfile's
+# `COPY noorinalabs-design-system-0.0.1.tgz /` step (fixed in #820) expects
+# the tarball at the root of its build context.
 
 name: Publish to GHCR
 
 on:
   push:
+    branches: [main]
     tags:
       - "v*"
       - "phase*-wave*"
@@ -29,16 +42,92 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: noorinalabs/noorinalabs-isnad-graph
+  # Pinned to the version frontend/package-lock.json references. When the
+  # frontend bumps to 0.0.2 (isnad-graph#818), update this AND the
+  # Dockerfile's COPY line and the package-lock together.
+  DESIGN_SYSTEM_REF: v0.0.1
 
 jobs:
   build-and-push:
+    name: Build and push (${{ matrix.component }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - component: api
+            image: noorinalabs/noorinalabs-isnad-graph
+            context: .
+            dockerfile: Dockerfile
+            # API is python/uv — cheap multi-arch, keep amd64+arm64 for future
+            # ARM worker nodes (see isnad-graph#817 side-effect #4).
+            platforms: linux/amd64,linux/arm64
+          - component: frontend
+            image: noorinalabs/noorinalabs-isnad-graph-frontend
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
+            # Frontend is amd64-only: the VPS is amd64, and a cross-arch npm-ci
+            # build through QEMU is ~10x slower with no production consumer of
+            # arm64 today. Re-enable arm64 when Phase 3 introduces ARM nodes.
+            platforms: linux/amd64
     steps:
-      - name: Checkout
+      - name: Checkout (isnad-graph)
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+      # Frontend only: stage the design-system tarball into the build context
+      # so the Dockerfile's `COPY noorinalabs-design-system-0.0.1.tgz /` works.
+      # GITHUB_TOKEN works cross-repo because both repos are in the same org.
+      - name: Checkout design-system (frontend only)
+        if: matrix.component == 'frontend'
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: noorinalabs/noorinalabs-design-system
+          ref: ${{ env.DESIGN_SYSTEM_REF }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: design-system-src
+
+      - name: Build and pack design-system (frontend only)
+        if: matrix.component == 'frontend'
+        working-directory: design-system-src
+        # CRITICAL pattern from ci.yml@f5f413f (Marisol, 2026-04-06):
+        # v0.0.1's package.json declares `files: ["dist"]` with NO prepack /
+        # prepare hook, and `dist/` is not committed. A fresh clone packs an
+        # empty 172-byte tarball (just package.json metadata) unless we run
+        # the build first. We also MUST use plain `npm install` — NOT
+        # `--omit=dev` — because Vite (the builder) is a devDependency.
+        # Sequence: install ALL deps → run build (populates dist/) → pack.
+        run: |
+          npm install
+          npm run build
+          npm pack
+          ls -lh ./*.tgz
+          mv ./noorinalabs-design-system-*.tgz ../frontend/
+
+      - name: Fix design-system lockfile integrity (frontend only)
+        if: matrix.component == 'frontend'
+        working-directory: frontend
+        # Pattern from ci.yml@615a692 (Marisol, 2026-04-06). The committed
+        # frontend/package-lock.json records the integrity hash of the v0.0.1
+        # tarball that was built and packed at release time. A freshly-packed
+        # tarball from source has a different hash (timestamps / filesystem
+        # ordering), which makes `npm ci` inside the Dockerfile fail with
+        # EINTEGRITY. Strip the integrity field from the lockfile entry;
+        # npm then trusts the resolved `file:` path without checksum.
+        # Because this rewrites the lockfile inside the frontend/ build
+        # context (before docker/build-push-action uploads the context),
+        # the Dockerfile's `COPY package.json package-lock.json ./` + `npm ci`
+        # see the patched lockfile and succeed.
+        run: |
+          node -e "
+            const fs = require('fs');
+            const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+            const pkg = lock.packages['node_modules/@noorinalabs/design-system'];
+            if (pkg) { delete pkg.integrity; }
+            fs.writeFileSync('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
+          "
+
       - name: Set up QEMU (multi-arch)
+        if: contains(matrix.platforms, 'arm64')
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
 
       - name: Set up Docker Buildx
@@ -55,30 +144,38 @@ jobs:
         id: meta
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ matrix.image }}
           tags: |
             # Git tag (e.g., v1.2.3 or phase12-wave1)
             type=ref,event=tag
-            # Short SHA (e.g., sha-a1b2c3d)
+            # Short SHA (e.g., sha-a1b2c3d) on every event
             type=sha,prefix=sha-,format=short
-            # Latest on semver tags only
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            # Latest on main-branch push or semver tags
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: ${{ matrix.platforms }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Per-component cache scopes so api and frontend don't evict each
+          # other's layers during parallel matrix builds.
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}
 
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          # Scan by digest — guaranteed to exist immediately after push and
+          # immune to tag-resolution races. The previous tag-based form broke
+          # on main pushes because metadata-action only emits :latest + :sha-*
+          # (no :main). See user-service#61 retro.
+          image-ref: ${{ env.REGISTRY }}/${{ matrix.image }}@${{ steps.build.outputs.digest }}
           format: table
           exit-code: "1"
           severity: CRITICAL,HIGH
@@ -87,9 +184,34 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "## GHCR Publish: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "## GHCR Publish (${{ matrix.component }}): ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Tag:** ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Image:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Platforms:** linux/amd64, linux/arm64" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Ref:** ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Image:** ${{ env.REGISTRY }}/${{ matrix.image }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Platforms:** ${{ matrix.platforms }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **SHA:** ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Digest:** ${{ steps.build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
+
+  # Fire repository_dispatch to noorinalabs-deploy AFTER both images published.
+  # Gated to main-branch pushes only — tag pushes and manual dispatches do NOT
+  # auto-deploy. This replaces the standalone notify-deploy.yml workflow which
+  # fired on every push-to-main without waiting for publish (race condition).
+  notify-deploy:
+    name: Notify deploy repo
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger deploy repo
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DEPLOY_REPO_PAT }}
+          repository: noorinalabs/noorinalabs-deploy
+          event-type: deploy-isnad-graph
+          client-payload: >-
+            {
+              "repo": "noorinalabs-isnad-graph",
+              "sha": "${{ github.sha }}",
+              "ref": "${{ github.ref_name }}",
+              "actor": "${{ github.actor }}"
+            }

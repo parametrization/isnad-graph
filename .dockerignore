@@ -1,10 +1,56 @@
+# Root Docker build context excludes (used by the API image — see Dockerfile).
+# Frontend has its own frontend/.dockerignore when built with context: ./frontend.
+# Keep this list tight — CI rebuilds cost real time on every merge to main.
+
+# VCS / CI
 .git
-data/
+.gitignore
+.gitattributes
+.github
+
+# Python virtualenv + caches
+.venv
 __pycache__
 .mypy_cache
 .ruff_cache
 .pytest_cache
 *.egg-info
+*.pyc
+*.pyo
+
+# Coverage / test artefacts
+.coverage
+coverage
+htmlcov
+.hypothesis
+test-results
+playwright-report
+
+# Node (frontend is built from its own context; the api image has no node deps)
 node_modules
 frontend/node_modules
-.venv
+frontend/dist
+frontend/test-results
+frontend/playwright-report
+frontend/.vite
+
+# Data (never bake datasets into the api image)
+data/
+
+# Notebooks / scratch
+notebooks/
+*.ipynb_checkpoints
+
+# Terraform state
+terraform/.terraform
+terraform/terraform.tfstate*
+terraform/*.tfvars
+
+# Env files (never bake secrets into images)
+.env
+.env.*
+!.env.example
+
+# Worktree / local-dev
+.claude/worktrees
+docker-compose.override.yml
